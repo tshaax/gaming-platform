@@ -19,16 +19,11 @@ interface Store {
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
       <!-- Left Sidebar -->
       <aside [class.w-64]="sidebarOpen()" [class.w-20]="!sidebarOpen()" class="bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col transition-all duration-300">
-        <!-- Toggle Button and Logo -->
+        <!-- Toggle Button -->
         <div class="mb-8">
-          <div class="flex items-center justify-between mb-4">
-            <button (click)="sidebarOpen.set(!sidebarOpen())" class="text-white hover:text-cyan-400 transition-colors p-2">
-              <span class="text-2xl">☰</span>
-            </button>
-          </div>
-          @if (sidebarOpen()) {
-            <img src="/playground-logo.png" alt="Playground Logo" class="w-full h-auto" />
-          }
+          <button (click)="sidebarOpen.set(!sidebarOpen())" class="text-white hover:text-cyan-400 transition-colors p-2">
+            <span class="text-2xl">☰</span>
+          </button>
         </div>
 
         <!-- Store Info -->
@@ -80,9 +75,12 @@ interface Store {
       <main class="flex-1 flex flex-col">
         <!-- Top Header -->
         <header class="bg-black/40 backdrop-blur-md border-b border-white/10 px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold text-white">Point of Sale</h1>
-            <p class="text-slate-400 text-sm">Select an action to get started</p>
+          <div class="flex items-center gap-4">
+            <img src="/playground-logo.png" alt="Playground Logo" class="h-12 w-auto" />
+            <div>
+              <h1 class="text-3xl font-bold text-white">Point of Sale</h1>
+              <p class="text-slate-400 text-sm">Select an action to get started</p>
+            </div>
           </div>
           <div class="flex items-center gap-4">
             <span class="text-green-400 text-sm font-semibold">● Live Sessions</span>
@@ -128,22 +126,22 @@ interface Store {
 
       <!-- New Gaming Session Modal -->
       @if (showGamingSessionModal()) {
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 w-full max-w-2xl">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2">
+          <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 w-full max-w-2xl max-h-[95vh] overflow-y-auto">
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-white/10 bg-slate-800/80 backdrop-blur sticky top-0">
+            <div class="flex items-center justify-between p-4 border-b border-white/10 bg-slate-800/80 backdrop-blur sticky top-0">
               <div class="flex items-center gap-3">
-                <span class="text-2xl text-cyan-400">▶</span>
-                <h2 class="text-2xl font-bold text-white">New Gaming Session</h2>
+                <span class="text-xl text-cyan-400">▶</span>
+                <h2 class="text-xl font-bold text-white">New Gaming Session</h2>
               </div>
-              <button (click)="showGamingSessionModal.set(false)" class="text-white hover:text-cyan-400 text-2xl">✕</button>
+              <button (click)="showGamingSessionModal.set(false)" class="text-white hover:text-cyan-400 text-xl">✕</button>
             </div>
 
             <!-- Modal Body -->
-            <form [formGroup]="gamingSessionForm" (ngSubmit)="startSession()" class="p-6 space-y-6">
+            <form [formGroup]="gamingSessionForm" (ngSubmit)="startSession()" class="p-4 space-y-4">
               <!-- Player -->
               <div>
-                <label class="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+                <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                   <span>👤</span>
                   <span>Player</span>
                 </label>
@@ -151,19 +149,19 @@ interface Store {
                   type="text"
                   formControlName="playerSearch"
                   placeholder="Select or search player..."
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                 />
               </div>
 
               <!-- Opponent Type -->
               <div>
-                <label class="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+                <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                   <span>🎮</span>
                   <span>Opponent Type</span>
                 </label>
                 <select
                   formControlName="opponentType"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                 >
                   <option value="">Select opponent type...</option>
                   <option value="single">Single Player</option>
@@ -174,13 +172,13 @@ interface Store {
 
               <!-- Station -->
               <div>
-                <label class="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+                <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                   <span>🖥️</span>
                   <span>Station</span>
                 </label>
                 <select
                   formControlName="station"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                 >
                   <option value="">Select station...</option>
                   <option value="station1">Station 1</option>
@@ -190,16 +188,16 @@ interface Store {
               </div>
 
               <!-- Duration and Rate Row -->
-              <div class="grid grid-cols-2 gap-6">
+              <div class="grid grid-cols-2 gap-3">
                 <!-- Duration -->
                 <div>
-                  <label class="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+                  <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                     <span>⏱️</span>
                     <span>Duration</span>
                   </label>
                   <select
                     formControlName="duration"
-                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                    class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                   >
                     <option value="">60 min</option>
                     <option value="30">30 min</option>
@@ -210,7 +208,7 @@ interface Store {
 
                 <!-- Rate -->
                 <div>
-                  <label class="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+                  <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                     <span>💰</span>
                     <span>Rate/hr ($)</span>
                   </label>
@@ -218,29 +216,29 @@ interface Store {
                     type="number"
                     formControlName="rate"
                     placeholder="10.00"
-                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                    class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                   />
                 </div>
               </div>
 
               <!-- Notes -->
               <div>
-                <label class="flex items-center gap-2 text-slate-300 text-sm font-semibold mb-3">
+                <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                   <span>📝</span>
                   <span>Notes (optional)</span>
                 </label>
                 <textarea
                   formControlName="notes"
                   placeholder="Any notes..."
-                  rows="3"
-                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 resize-none"
+                  rows="2"
+                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 resize-none"
                 ></textarea>
               </div>
 
               <!-- Action Buttons -->
               <button
                 type="submit"
-                class="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+                class="w-full px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-bold text-sm rounded-lg transition-all flex items-center justify-center gap-2"
               >
                 <span class="text-lg">▶</span>
                 <span>Start Session</span>
