@@ -169,6 +169,27 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     },
   );
 
+  router.delete(
+    '/stations/:stationId',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const { stationId } = req.params;
+        await gamingSessionService.deleteGamingStation(stationId);
+        const body: ApiResponse<null> = { data: null, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to delete gaming station',
+        });
+      }
+    },
+  );
+
   // Duration options endpoints
   router.get(
     '/durations/:storeId',
@@ -209,6 +230,27 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           data: null,
           success: false,
           error: error.message || 'Failed to create duration option',
+        });
+      }
+    },
+  );
+
+  router.delete(
+    '/durations/:durationId',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const { durationId } = req.params;
+        await gamingSessionService.deleteDurationOption(durationId);
+        const body: ApiResponse<null> = { data: null, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to delete duration option',
         });
       }
     },
@@ -258,6 +300,27 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           data: null,
           success: false,
           error: error.message || 'Failed to create rate option',
+        });
+      }
+    },
+  );
+
+  router.delete(
+    '/rates/:rateId',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const { rateId } = req.params;
+        await gamingSessionService.deleteRateOption(rateId);
+        const body: ApiResponse<null> = { data: null, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to delete rate option',
         });
       }
     },
