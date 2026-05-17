@@ -16,7 +16,14 @@
     "baseUrl": ".",
     "paths": {
       "@org/api/products": ["libs/api/products/src/index.ts"],
+      "@org/api/auth": ["libs/api/auth/src/index.ts"],
+      "@org/api/db": ["libs/api/db/src/index.ts"],
+      "@org/api/cashier": ["libs/api/cashier/src/index.ts"],
+      "@org/api/store": ["libs/api/store/src/index.ts"],
+      "@org/api/gaming-session": ["libs/api/gaming-session/src/index.ts"],
       "@org/models": ["libs/shared/models/src/index.ts"],
+      "@org/drizzle-schema": ["drizzle/schema.ts"],
+      "@org/fe/auth": ["libs/fe/auth/src/index.ts"],
       "@org/shop/data": ["libs/shop/data/src/index.ts"],
       "@org/shop/feature-product-detail": [
         "libs/shop/feature-product-detail/src/index.ts"

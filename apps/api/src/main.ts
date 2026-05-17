@@ -1,5 +1,11 @@
 import express from 'express';
+import { Pool } from 'pg';
+import rateLimit from 'express-rate-limit';
 import { ProductsService } from '@org/api/products';
+import { AuthService, createAuthRouter } from '@org/api/auth';
+import { CashierService, createCashierRouter } from '@org/api/cashier';
+import { StoreService, createStoreRouter } from '@org/api/store';
+import { GamingSessionService, createGamingSessionRouter } from '@org/api/gaming-session';
 import { ApiResponse, Product, ProductFilter, PaginatedResponse } from '@org/models';
 
 const host = process.env.HOST ?? 'localhost';
@@ -11,11 +17,18 @@ const productsService = new ProductsService();
 // Middleware
 app.use(express.json());
 
-// CORS configuration for Angular app
+// CORS — allow configured origins, or all in development
+const allowedOrigins = (process.env['CORS_ALLOWED_ORIGINS'] ?? '*').split(',');
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes('*') || (origin && allowedOrigins.includes(origin))) {
+    res.header('Access-Control-Allow-Origin', origin ?? '*');
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization',
+  );
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
   } else {
@@ -23,115 +36,28 @@ app.use((req, res, next) => {
   }
 });
 
+// Auth setup
+const pool = new Pool({ connectionString: process.env['DATABASE_URL'] });
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, data: null, error: 'Too many requests, please try again later' },
+});
+app.use('/api/auth', authLimiter, createAuthRouter(new AuthService(pool)));
+
+// Cashier management
+app.use('/api/cashiers', createCashierRouter(new CashierService(pool)));
+
+// Store management
+app.use('/api/stores', createStoreRouter(new StoreService(pool)));
+
+// Gaming sessions
+app.use('/api/gaming-sessions', createGamingSessionRouter(new GamingSessionService(pool)));
+
 app.get('/', (req, res) => {
   res.send({ message: 'Hello API' });
-});
-
-// Products endpoints
-app.get('/api/products', (req, res) => {
-  try {
-    const filter: ProductFilter = {};
-
-    if (req.query.category) {
-      filter.category = req.query.category as string;
-    }
-    if (req.query.minPrice) {
-      filter.minPrice = Number(req.query.minPrice);
-    }
-    if (req.query.maxPrice) {
-      filter.maxPrice = Number(req.query.maxPrice);
-    }
-    if (req.query.inStock !== undefined) {
-      filter.inStock = req.query.inStock === 'true';
-    }
-    if (req.query.searchTerm) {
-      filter.searchTerm = req.query.searchTerm as string;
-    }
-
-    const page = req.query.page ? Number(req.query.page) : 1;
-    const pageSize = req.query.pageSize ? Number(req.query.pageSize) : 12;
-
-    const result = productsService.getAllProducts(filter, page, pageSize);
-
-    const response: ApiResponse<PaginatedResponse<Product>> = {
-      data: result,
-      success: true,
-    };
-
-    res.json(response);
-  } catch (error) {
-    const response: ApiResponse<null> = {
-      data: null,
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-    res.status(500).json(response);
-  }
-});
-
-app.get('/api/products/:id', (req, res) => {
-  try {
-    const product = productsService.getProductById(req.params.id);
-
-    if (!product) {
-      const response: ApiResponse<null> = {
-        data: null,
-        success: false,
-        error: 'Product not found',
-      };
-      return res.status(404).json(response);
-    }
-
-    const response: ApiResponse<Product> = {
-      data: product,
-      success: true,
-    };
-
-    res.json(response);
-  } catch (error) {
-    const response: ApiResponse<null> = {
-      data: null,
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-    res.status(500).json(response);
-  }
-});
-
-app.get('/api/products-metadata/categories', (req, res) => {
-  try {
-    const categories = productsService.getCategories();
-    const response: ApiResponse<string[]> = {
-      data: categories,
-      success: true,
-    };
-    res.json(response);
-  } catch (error) {
-    const response: ApiResponse<null> = {
-      data: null,
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-    res.status(500).json(response);
-  }
-});
-
-app.get('/api/products-metadata/price-range', (req, res) => {
-  try {
-    const priceRange = productsService.getPriceRange();
-    const response: ApiResponse<{ min: number; max: number }> = {
-      data: priceRange,
-      success: true,
-    };
-    res.json(response);
-  } catch (error) {
-    const response: ApiResponse<null> = {
-      data: null,
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-    res.status(500).json(response);
-  }
 });
 
 app.listen(port, host, () => {
