@@ -27,9 +27,9 @@ interface Store {
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+    <div class="w-full h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex overflow-hidden">
       <!-- Left Sidebar -->
-      <aside class="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col">
+      <aside class="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col flex-shrink-0 overflow-y-auto">
         <div class="mb-8">
           <div class="flex items-center gap-3 mb-2 cursor-pointer" (click)="goBack()">
             <span class="text-lg">←</span>
@@ -52,7 +52,7 @@ interface Store {
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col">
+      <main class="flex-1 flex flex-col overflow-hidden">
         <!-- Top Header -->
         <header class="bg-black/40 backdrop-blur-md border-b border-white/10 px-8 py-4 flex items-center justify-between">
           <div>
@@ -66,7 +66,7 @@ interface Store {
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 p-8 overflow-auto">
+        <div class="flex-1 p-8 overflow-y-auto overflow-x-hidden w-full">
           <!-- Cashiers List -->
           <div class="bg-gradient-to-br from-blue-600/10 to-slate-600/10 backdrop-blur-md rounded-xl p-6 border border-white/10">
             <div class="flex items-center justify-between mb-6">

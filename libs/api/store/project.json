@@ -1,0 +1,7 @@
+{
+  "name": "api-store",
+  "projectType": "library",
+  "sourceRoot": "libs/api/store/src",
+  "prefix": "org",
+  "targets": {}
+}

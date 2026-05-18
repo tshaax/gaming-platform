@@ -10,9 +10,9 @@ import { signal } from '@angular/core';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+    <div class="w-full h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex overflow-hidden">
       <!-- Left Sidebar -->
-      <aside class="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col">
+      <aside class="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col flex-shrink-0 overflow-y-auto">
         <!-- Logo -->
         <div class="mb-8">
           <img src="/playground-logo.png" alt="Playground Logo" class="w-full h-auto mb-4" />
@@ -65,9 +65,9 @@ import { signal } from '@angular/core';
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col">
+      <main class="flex-1 flex flex-col overflow-hidden">
         <!-- Top Header -->
-        <header class="bg-black/40 backdrop-blur-md border-b border-white/10 px-8 py-4 flex items-center justify-between">
+        <header class="bg-black/40 backdrop-blur-md border-b border-white/10 px-8 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             <h1 class="text-3xl font-bold text-white">Dashboard</h1>
             <p class="text-slate-400 text-sm">Welcome back, Admin — here's the system overview</p>
@@ -78,7 +78,7 @@ import { signal } from '@angular/core';
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 p-8 overflow-auto">
+        <div class="flex-1 p-8 overflow-y-auto overflow-x-hidden w-full">
           <!-- Stats Grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <!-- Total Cashiers -->

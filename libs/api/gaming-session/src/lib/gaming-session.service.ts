@@ -214,7 +214,6 @@ export class GamingSessionService {
       .set({
         ratePerHour,
         label,
-        updatedAt: new Date(),
       })
       .where(eq(rateOptions.id, optionId))
       .returning();

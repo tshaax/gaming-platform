@@ -47,9 +47,9 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+    <div class="w-full h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex overflow-hidden">
       <!-- Left Sidebar -->
-      <aside class="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col">
+      <aside class="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 p-6 flex flex-col flex-shrink-0 overflow-y-auto">
         <div class="mb-8">
           <div class="flex items-center gap-3 mb-2 cursor-pointer" (click)="goBack()">
             <span class="text-lg">←</span>
@@ -72,7 +72,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 flex flex-col">
+      <main class="flex-1 flex flex-col overflow-hidden">
         <!-- Top Header -->
         <header class="bg-black/40 backdrop-blur-md border-b border-white/10 px-8 py-4 flex items-center justify-between">
           <div>
@@ -106,7 +106,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
         </div>
 
         <!-- Content Area -->
-        <div class="flex-1 p-8 overflow-auto">
+        <div class="flex-1 p-8 overflow-y-auto overflow-x-hidden w-full">
           <!-- Stores Tab -->
           @if (activeTab() === 'stores') {
             <div class="bg-gradient-to-br from-blue-600/10 to-slate-600/10 backdrop-blur-md rounded-xl p-6 border border-white/10">
@@ -367,7 +367,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                               @for (rate of rates(); track rate.id) {
                                 <div class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg">
                                   <span class="text-white font-semibold">
-                                    ${{ rate.ratePerHour }}/hr
+                                    $ {{ rate.ratePerHour }}/hr
                                     @if (rate.label) {
                                       <span class="text-slate-400 text-sm">({{ rate.label }})</span>
                                     }

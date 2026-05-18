@@ -1,0 +1,42 @@
+
+[7m[1m[36m NX [39m[22m[27m  [36mRunning target [1mserve[22m for project api and [1m1[22m task it depends on:[39m
+
+[2m[36m[39m[22m
+
+[2m> [22m[2mnx run[22m api:build:production  [2m[existing outputs match the cache, left as is][22m
+
+
+[2m> [22m[2mnx run[22m api:serve:development --no-inspect
+
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mError: listen EADDRINUSE: address already in use ::1:3333
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://127.0.0.1:3333/52165c5a-4140-4802-a774-f26af1d2d466
+For help, see: https://nodejs.org/en/docs/inspector
+[39m[22m
+[1m[31mError: listen EADDRINUSE: address already in use ::1:3333
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.callback (node:net:2178:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mStarting inspector on 127.0.0.1:3333 failed: address a[ ready ] http://localhost:[1m[31mError: listen EADDRINUSE: address already in use ::1:3333
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.callback (node:net:2178:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+6)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.[1m[31mError: listen EADDRINUSE: address already in use ::1:3333
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.callback (node:net:2178:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m

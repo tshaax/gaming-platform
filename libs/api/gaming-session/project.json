@@ -1,17 +1,4 @@
 {
   "name": "api-gaming-session",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "library",
-  "sourceRoot": "libs/api/gaming-session/src",
-  "prefix": "org",
-  "targets": {
-    "lint": {
-      "executor": "@nx/linter:eslint",
-      "outputs": ["{options.outputFile}"],
-      "options": {
-        "lintFilePatterns": ["libs/api/gaming-session/**/*.ts"]
-      }
-    }
-  },
-  "tags": ["scope:api", "type:feature"]
+  "projectType": "library"
 }

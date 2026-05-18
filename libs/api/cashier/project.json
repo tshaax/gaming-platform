@@ -1,0 +1,7 @@
+{
+  "name": "api-cashier",
+  "projectType": "library",
+  "sourceRoot": "libs/api/cashier/src",
+  "prefix": "org",
+  "targets": {}
+}

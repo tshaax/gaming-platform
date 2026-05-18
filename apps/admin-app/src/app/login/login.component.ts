@@ -9,8 +9,8 @@ import { AuthService } from '@org/fe/auth';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-blue-900 via-slate-800 to-slate-900 flex items-center justify-center px-4">
-      <div class="w-full max-w-md">
+    <div class="w-full h-screen bg-gradient-to-br from-blue-900 via-slate-800 to-slate-900 flex items-center justify-center px-4 py-4">
+      <div class="w-full max-w-md h-fit">
         <div class="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20">
           <div class="text-center mb-8">
             <img src="/playground-logo.png" alt="Playground Logo" class="w-32 h-auto mx-auto mb-4" />
@@ -154,7 +154,9 @@ export class LoginComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.errorMessage.set(err.error?.error || 'Login failed. Please try again.');
+        console.error('Login error:', err);
+        const errorMsg = err.error?.error || err.message || 'Login failed. Please try again.';
+        this.errorMessage.set(errorMsg);
       },
     });
   }

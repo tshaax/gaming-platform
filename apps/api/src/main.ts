@@ -38,13 +38,17 @@ app.use((req, res, next) => {
 
 // Auth setup
 const pool = new Pool({ connectionString: process.env['DATABASE_URL'] });
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+
+// Rate limiting — more generous in development, stricter in production
+const authLimiterConfig = {
+  windowMs: Number(process.env['RATE_LIMIT_WINDOW_MS'] ?? 15 * 60 * 1000), // 15 min default
+  max: Number(process.env['RATE_LIMIT_MAX_REQUESTS'] ?? 100), // 100 requests default (dev-friendly)
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, data: null, error: 'Too many requests, please try again later' },
-});
+};
+
+const authLimiter = rateLimit(authLimiterConfig);
 app.use('/api/auth', authLimiter, createAuthRouter(new AuthService(pool)));
 
 // Cashier management

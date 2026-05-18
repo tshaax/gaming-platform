@@ -21,3 +21,4 @@
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
 <!-- nx configuration end-->
+- Do not make any changes until you have 95% confidence in what you need to to build. Ask me follow-up questions until you reach that confidence.

@@ -1,0 +1,266 @@
+
+[2m> [22m[2mnx run[22m admin-app:serve:development
+
+[33m❯[39m Building...
+[32m✔[39m Building...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m [36m38.69 kB[37m[2m | [22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m[36m110 bytes[37m[2m | [22m
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m [1m38.80 kB[22m
+Application bundle generation complete. [5.293 seconds] - 2026-05-17T19:09:52.961Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[37mWatch mode enabled. Watching for file changes...[39m
+[37mNOTE: Raw file sizes do not reflect development server per-request transformations.[39m
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m4200[22m/[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.842 seconds] - 2026-05-17T19:50:34.911Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: AuthTokens; success: boolean; }>' is not assignable to type 'Observable<AuthTokens>'.
+  Type '{ data: AuthTokens; success: boolean; }' is missing the following properties from type 'AuthTokens': accessToken, refreshToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:45:4:
+[37m      45 │     [32mreturn[37m this.http.post<{ data: AuthTokens; success: boolean }>(...
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.291 seconds] - 2026-05-17T19:50:38.725Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: AuthTokens; success: boolean; }>' is not assignable to type 'Observable<AuthTokens>'.
+  Type '{ data: AuthTokens; success: boolean; }' is missing the following properties from type 'AuthTokens': accessToken, refreshToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:45:4:
+[37m      45 │     [32mreturn[37m this.http.post<{ data: AuthTokens; success: boolean }>(...
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: { accessToken: string; expiresIn: number; }; success: boolean; }>' is not assignable to type 'Observable<{ accessToken: string; expiresIn: number; }>'.
+  Type '{ data: { accessToken: string; expiresIn: number; }; success: boolean; }' is missing the following properties from type '{ accessToken: string; expiresIn: number; }': accessToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:77:4:
+[37m      77 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.295 seconds] - 2026-05-17T19:50:42.711Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: AuthTokens; success: boolean; }>' is not assignable to type 'Observable<AuthTokens>'.
+  Type '{ data: AuthTokens; success: boolean; }' is missing the following properties from type 'AuthTokens': accessToken, refreshToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:45:4:
+[37m      45 │     [32mreturn[37m this.http.post<{ data: AuthTokens; success: boolean }>(...
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: null; success: boolean; }>' is not assignable to type 'Observable<void>'.
+  Type '{ data: null; success: boolean; }' is not assignable to type 'void'.[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:62:4:
+[37m      62 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: { accessToken: string; expiresIn: number; }; success: boolean; }>' is not assignable to type 'Observable<{ accessToken: string; expiresIn: number; }>'.
+  Type '{ data: { accessToken: string; expiresIn: number; }; success: boolean; }' is missing the following properties from type '{ accessToken: string; expiresIn: number; }': accessToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:77:4:
+[37m      77 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.285 seconds] - 2026-05-17T19:50:49.919Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: AuthTokens; success: boolean; }>' is not assignable to type 'Observable<AuthTokens>'.
+  Type '{ data: AuthTokens; success: boolean; }' is missing the following properties from type 'AuthTokens': accessToken, refreshToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:45:4:
+[37m      45 │     [32mreturn[37m this.http.post<{ data: AuthTokens; success: boolean }>(...
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: null; success: boolean; }>' is not assignable to type 'Observable<void>'.
+  Type '{ data: null; success: boolean; }' is not assignable to type 'void'.[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:62:4:
+[37m      62 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: { accessToken: string; expiresIn: number; }; success: boolean; }>' is not assignable to type 'Observable<{ accessToken: string; expiresIn: number; }>'.
+  Type '{ data: { accessToken: string; expiresIn: number; }; success: boolean; }' is missing the following properties from type '{ accessToken: string; expiresIn: number; }': accessToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:77:4:
+[37m      77 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.244 seconds] - 2026-05-17T19:51:19.307Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: AuthTokens; success: boolean; }>' is not assignable to type 'Observable<AuthTokens>'.
+  Type '{ data: AuthTokens; success: boolean; }' is missing the following properties from type 'AuthTokens': accessToken, refreshToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:45:4:
+[37m      45 │     [32mreturn[37m this.http.post<{ data: AuthTokens; success: boolean }>(...
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: null; success: boolean; }>' is not assignable to type 'Observable<void>'.
+  Type '{ data: null; success: boolean; }' is not assignable to type 'void'.[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:62:4:
+[37m      62 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: { accessToken: string; expiresIn: number; }; success: boolean; }>' is not assignable to type 'Observable<{ accessToken: string; expiresIn: number; }>'.
+  Type '{ data: { accessToken: string; expiresIn: number; }; success: boolean; }' is missing the following properties from type '{ accessToken: string; expiresIn: number; }': accessToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:77:4:
+[37m      77 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.319 seconds] - 2026-05-17T19:51:20.858Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: null; success: boolean; }>' is not assignable to type 'Observable<void>'.
+  Type '{ data: null; success: boolean; }' is not assignable to type 'void'.[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:63:4:
+[37m      63 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: { accessToken: string; expiresIn: number; }; success: boolean; }>' is not assignable to type 'Observable<{ accessToken: string; expiresIn: number; }>'.
+  Type '{ data: { accessToken: string; expiresIn: number; }; success: boolean; }' is missing the following properties from type '{ accessToken: string; expiresIn: number; }': accessToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:78:4:
+[37m      78 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.328 seconds] - 2026-05-17T19:51:24.151Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2322: Type 'Observable<{ data: { accessToken: string; expiresIn: number; }; success: boolean; }>' is not assignable to type 'Observable<{ accessToken: string; expiresIn: number; }>'.
+  Type '{ data: { accessToken: string; expiresIn: number; }; success: boolean; }' is missing the following properties from type '{ accessToken: string; expiresIn: number; }': accessToken, expiresIn[0m [1m[35m[plugin angular-compiler][0m
+    libs/fe/auth/src/lib/auth.service.ts:79:4:
+[37m      79 │     [32mreturn[37m this.http
+         ╵     [32m~~~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m [36m38.86 kB[37m[2m | [22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m[36m110 bytes[37m[2m | [22m
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m [1m38.97 kB[22m
+Application bundle generation complete. [0.379 seconds] - 2026-05-17T19:51:26.668Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:42:84:
+[37m      42 │ ...mibold">Email:</span> {{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+         ╵                                                 [32m~~~~~[0m
+[39m[22m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m[1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m [2m | [22m[36m45.37 kB[37m[2m | [22m
+Application bundle generation complete. [0.292 seconds] - 2026-05-17T20:05:19.263Z
+[39m
+[1m[33m[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mNG8107: NG8107: The left side of this optional chain operation does not include 'null' or 'undefined' in its type, therefore the '?.' operator can be replaced with the '.' operator. Find more at https://v21.angular.dev/extended-diagnostics/NG8107[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/landing/landing.component.ts:137:75:
+[37m      137 │ ...white font-semibold">{{ authService.user()?.[32memail[37m || 'N/A' }}</p>
+          ╵                                                [32m~~~~~[0m
+[39m[22m
+[37mComponent update sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m[1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m [2m | [22m[36m51.09 kB[37m[2m | [22m
+Application bundle generation complete. [0.271 seconds] - 2026-05-17T20:19:33.224Z
+[39m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m[1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m [2m | [22m[36m98.48 kB[37m[2m | [22m
+Application bundle generation complete. [0.815 seconds] - 2026-05-17T20:20:13.830Z
+[39m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m[2m | [22m [1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m [2m | [22m[36m105.55 kB[37m[2m | [22m
+Application bundle generation complete. [0.615 seconds] - 2026-05-17T20:36:34.070Z
+[39m
+[37mPage reload sent to client(s).[39m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.500 seconds] - 2026-05-17T20:36:43.737Z
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2741: Property 'slug' is missing in type '{ id: string; name: any; address: any; taxNumber: any; manager: any; contactPerson: any; contactPhone: any; }' but required in type 'Store'.[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/store-maintenance/store-maintenance.component.ts:229:10:
+[37m      229 │     const [32mnewStore[37m: Store = {
+          ╵           [32m~~~~~~~~[0m
+  'slug' is declared here.
+    apps/admin-app/src/app/store-maintenance/store-maintenance.component.ts:11:2:
+[37m      11 │   [32mslug[37m: string;
+         ╵   [32m~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37mApplication bundle generation failed. [0.442 seconds] - 2026-05-17T20:36:54.498Z
+[39m
+[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'isLoading' does not exist on type 'StoreMaintenanceComponent'.[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/store-maintenance/store-maintenance.component.ts:148:47:
+[37m      148 │                     [disabled]="!form.valid || [32misLoading[37m()"
+          ╵                                                [32m~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2339: Property 'isLoading' does not exist on type 'StoreMaintenanceComponent'.[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/store-maintenance/store-maintenance.component.ts:152:29:
+[37m      152 │                     <span>{{ [32misLoading[37m() ? 'Creating...' : 'Creat...
+          ╵                              [32m~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mTS2741: Property 'slug' is missing in type '{ id: string; name: any; address: any; taxNumber: any; manager: any; contactPerson: any; contactPhone: any; }' but required in type 'Store'.[0m [1m[35m[plugin angular-compiler][0m
+    apps/admin-app/src/app/store-maintenance/store-maintenance.component.ts:240:10:
+[37m      240 │     const [32mnewStore[37m: Store = {
+          ╵           [32m~~~~~~~~[0m
+  'slug' is declared here.
+    apps/admin-app/src/app/store-maintenance/store-maintenance.component.ts:11:2:
+[37m      11 │   [32mslug[37m: string;
+         ╵   [32m~~~~[0m
+[39m[22m
+[33m❯[39m Changes detected. Rebuilding...
+[32m✔[39m Changes detected. Rebuilding...
+[37m[1mInitial chunk files[22m[2m | [22m[1mNames[22m        [2m | [22m [1mRaw size[22m
+[32mmain.js[37m            [2m | [22m[2mmain[22m         [2m | [22m[36m107.09 kB[37m[2m | [22m
+[32mstyles.css[37m         [2m | [22m[2mstyles[22m       [2m | [22m[36m110 bytes[37m[2m | [22m
+[1m [22m                  [2m | [22m[1mInitial total[22m[2m | [22m[1m107.20 kB[22m
+Application bundle generation complete. [0.373 seconds] - 2026-05-17T20:36:59.284Z
+[39m
+[37mPage reload sent to client(s).[39m
+Task "admin-app:serve:development" is continuous but exited with code 4294967295
+
+[2m[31m[39m[22m
+
+[7m[1m[31m NX [39m[22m[27m  [31mRunning target [1mserve[22m for project admin-app failed[39m
+
+[2mFailed tasks:[22m
+
+[2m-[22m admin-app:serve:development
+
+[2mHint: run the command with[22m --verbose [2mfor more details.[22m
+
