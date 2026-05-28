@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService } from '@org/fe/auth';
 import { signal } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-landing',
@@ -195,6 +196,8 @@ export class LandingComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
 
+  private apiUrl = environment.apiUrl;
+
   totalCashiers = signal(0);
   totalStores = signal(0);
 
@@ -203,7 +206,7 @@ export class LandingComponent implements OnInit {
   }
 
   private loadStats(): void {
-    this.http.get<{ data: any[] }>('http://localhost:3333/api/cashiers').subscribe({
+    this.http.get<{ data: any[] }>(`${this.apiUrl}/api/cashiers`).subscribe({
       next: (response) => {
         this.totalCashiers.set(response.data.length);
       },
@@ -212,7 +215,7 @@ export class LandingComponent implements OnInit {
       },
     });
 
-    this.http.get<{ data: any[] }>('http://localhost:3333/api/stores').subscribe({
+    this.http.get<{ data: any[] }>(`${this.apiUrl}/api/stores`).subscribe({
       next: (response) => {
         this.totalStores.set(response.data.length);
       },
