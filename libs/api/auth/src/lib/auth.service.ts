@@ -18,8 +18,8 @@ import type {
 } from '@org/models';
 import type { RegisterInput, LoginInput, RefreshInput } from './auth.schemas';
 
-const BCRYPT_ROUNDS     = 12;
-const ACCESS_TOKEN_TTL  = 15 * 60;
+const BCRYPT_ROUNDS = 12;
+const ACCESS_TOKEN_TTL = 15 * 60;
 const REFRESH_TOKEN_TTL = 7 * 24 * 60 * 60;
 
 function authError(message: string, code: string): Error {
@@ -36,7 +36,7 @@ export class AuthService {
   }
 
   async register(input: RegisterInput): Promise<AuthTokens> {
-    const normalizedEmail     = input.email?.toLowerCase().trim();
+    const normalizedEmail = input.email?.toLowerCase().trim();
     const normalizedCellphone = input.cellphone?.trim();
 
     const [store] = await this.db
@@ -50,7 +50,10 @@ export class AuthService {
     }
 
     // Look up existing user by email or cellphone
-    const existing = await this.findUserByCredential(normalizedEmail, normalizedCellphone);
+    const existing = await this.findUserByCredential(
+      normalizedEmail,
+      normalizedCellphone,
+    );
 
     let userId: string;
 
@@ -85,8 +88,8 @@ export class AuthService {
       const [newUser] = await this.db
         .insert(users)
         .values({
-          email:        normalizedEmail ?? null,
-          cellphone:    normalizedCellphone ?? null,
+          email: normalizedEmail ?? null,
+          cellphone: normalizedCellphone ?? null,
           passwordHash,
         })
         .returning({ id: users.id });
@@ -106,10 +109,13 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<AuthTokens> {
-    const normalizedEmail     = input.email?.toLowerCase().trim();
+    const normalizedEmail = input.email?.toLowerCase().trim();
     const normalizedCellphone = input.cellphone?.trim();
 
-    const user = await this.findUserByCredential(normalizedEmail, normalizedCellphone);
+    const user = await this.findUserByCredential(
+      normalizedEmail,
+      normalizedCellphone,
+    );
 
     if (!user) {
       throw authError('Invalid credentials', 'INVALID_CREDENTIALS');
@@ -136,18 +142,27 @@ export class AuthService {
         .limit(1);
 
       if (!m) {
-        throw authError('User not registered at this store', 'MEMBERSHIP_NOT_FOUND');
+        throw authError(
+          'User not registered at this store',
+          'MEMBERSHIP_NOT_FOUND',
+        );
       }
       membership = m;
     } else {
       const [m] = await this.db
-        .select({ storeId: userStoreMemberships.storeId, role: userStoreMemberships.role })
+        .select({
+          storeId: userStoreMemberships.storeId,
+          role: userStoreMemberships.role,
+        })
         .from(userStoreMemberships)
         .where(eq(userStoreMemberships.userId, user.id))
         .limit(1);
 
       if (!m) {
-        throw authError('User not registered at any store', 'MEMBERSHIP_NOT_FOUND');
+        throw authError(
+          'User not registered at any store',
+          'MEMBERSHIP_NOT_FOUND',
+        );
       }
       storeId = m.storeId;
       membership = m;
@@ -156,7 +171,9 @@ export class AuthService {
     return this.issueTokens(user.id, storeId, membership.role as UserRole);
   }
 
-  async refresh(input: RefreshInput): Promise<Pick<AuthTokens, 'accessToken' | 'expiresIn'>> {
+  async refresh(
+    input: RefreshInput,
+  ): Promise<Pick<AuthTokens, 'accessToken' | 'expiresIn'>> {
     const secret = process.env['JWT_SECRET']!;
     let payload: JwtRefreshPayload;
 
@@ -209,10 +226,10 @@ export class AuthService {
 
     const accessToken = jwt.sign(
       {
-        sub:     payload.sub,
+        sub: payload.sub,
         storeId: payload.storeId,
-        role:    membership.role as UserRole,
-        type:    'access',
+        role: membership.role as UserRole,
+        type: 'access',
       } satisfies Omit<JwtAccessPayload, 'iat' | 'exp'>,
       secret,
       { expiresIn: ACCESS_TOKEN_TTL },
@@ -243,9 +260,13 @@ export class AuthService {
       );
   }
 
-  private async issueTokens(userId: string, storeId: string, role: UserRole): Promise<AuthTokens> {
+  private async issueTokens(
+    userId: string,
+    storeId: string,
+    role: UserRole,
+  ): Promise<AuthTokens> {
     const secret = process.env['JWT_SECRET']!;
-    const now    = new Date();
+    const now = new Date();
     const expiresAt = new Date(now.getTime() + REFRESH_TOKEN_TTL * 1000);
 
     // Insert a placeholder row first to get the tokenId (UUID)
@@ -260,14 +281,16 @@ export class AuthService {
       .returning({ id: refreshTokens.id });
 
     const refreshPayload: Omit<JwtRefreshPayload, 'iat' | 'exp'> = {
-      sub:     userId,
+      sub: userId,
       storeId,
       tokenId: tokenRow.id,
-      type:    'refresh',
+      type: 'refresh',
     };
 
-    const refreshToken = jwt.sign(refreshPayload, secret, { expiresIn: REFRESH_TOKEN_TTL });
-    const tokenHash    = this.hashToken(refreshToken);
+    const refreshToken = jwt.sign(refreshPayload, secret, {
+      expiresIn: REFRESH_TOKEN_TTL,
+    });
+    const tokenHash = this.hashToken(refreshToken);
 
     // Update row with real hash
     await this.db
@@ -276,9 +299,14 @@ export class AuthService {
       .where(eq(refreshTokens.id, tokenRow.id));
 
     const accessPayload: Omit<JwtAccessPayload, 'iat' | 'exp'> = {
-      sub: userId, storeId, role, type: 'access',
+      sub: userId,
+      storeId,
+      role,
+      type: 'access',
     };
-    const accessToken = jwt.sign(accessPayload, secret, { expiresIn: ACCESS_TOKEN_TTL });
+    const accessToken = jwt.sign(accessPayload, secret, {
+      expiresIn: ACCESS_TOKEN_TTL,
+    });
 
     return { accessToken, refreshToken, expiresIn: ACCESS_TOKEN_TTL };
   }
@@ -286,23 +314,30 @@ export class AuthService {
   private async findUserByCredential(email?: string, cellphone?: string) {
     if (!email && !cellphone) return null;
 
-    const conditions = [];
-    if (email)     conditions.push(eq(users.email,     email));
-    if (cellphone) conditions.push(eq(users.cellphone, cellphone));
+    try {
+      const conditions = [];
+      if (email) conditions.push(eq(users.email, email));
+      if (cellphone) conditions.push(eq(users.cellphone, cellphone));
 
-    const [user] = await this.db
-      .select({
-        id:           users.id,
-        passwordHash: users.passwordHash,
-      })
-      .from(users)
-      .where(conditions.length === 1 ? conditions[0] : or(...conditions))
-      .limit(1);
+      const [user] = await this.db
+        .select({
+          id: users.id,
+          passwordHash: users.passwordHash,
+        })
+        .from(users)
+        .where(conditions.length === 1 ? conditions[0] : or(...conditions))
+        .limit(1);
 
-    return user ?? null;
+      return user ?? null;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   }
 
-  async getUserStores(userId: string): Promise<Array<{ id: string; name: string; slug: string }>> {
+  async getUserStores(
+    userId: string,
+  ): Promise<Array<{ id: string; name: string; slug: string }>> {
     return this.db
       .select({
         id: stores.id,
