@@ -1,9 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, Inject, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, BehaviorSubject, tap, map } from 'rxjs';
 import type { AuthTokens, LoginRequest, UserRole } from '@org/models';
-
+import { API_URL } from './api.token';
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
@@ -32,9 +32,11 @@ export class AuthService {
   readonly role = computed(() => this._state().role);
   readonly userId = computed(() => this._state().userId);
   readonly storeId = computed(() => this._state().storeId);
-  readonly accessToken$ = new BehaviorSubject<string | null>(this._state().accessToken);
+  readonly accessToken$ = new BehaviorSubject<string | null>(
+    this._state().accessToken,
+  );
 
-  private apiUrl = 'http://localhost:3333';
+  private apiUrl = inject(API_URL);
 
   constructor(
     private http: HttpClient,
@@ -42,12 +44,22 @@ export class AuthService {
   ) {}
 
   login(req: LoginRequest): Observable<AuthTokens> {
-    return this.http.post<{ data: AuthTokens; success: boolean }>(`${this.apiUrl}/api/auth/login`, req).pipe(
-      tap((response) => {
-        this.storeTokens(response.data, req.storeId, req.email, req.cellphone);
-      }),
-      map((response) => response.data),
-    );
+    return this.http
+      .post<{
+        data: AuthTokens;
+        success: boolean;
+      }>(`${this.apiUrl}/api/auth/login`, req)
+      .pipe(
+        tap((response) => {
+          this.storeTokens(
+            response.data,
+            req.storeId,
+            req.email,
+            req.cellphone,
+          );
+        }),
+        map((response) => response.data),
+      );
   }
 
   logout(): Observable<void> {
@@ -61,7 +73,10 @@ export class AuthService {
     }
 
     return this.http
-      .post<{ data: null; success: boolean }>(`${this.apiUrl}/api/auth/logout`, { refreshToken })
+      .post<{
+        data: null;
+        success: boolean;
+      }>(`${this.apiUrl}/api/auth/logout`, { refreshToken })
       .pipe(
         tap(() => {
           this.clearState();
@@ -77,10 +92,10 @@ export class AuthService {
     }
 
     return this.http
-      .post<{ data: { accessToken: string; expiresIn: number }; success: boolean }>(
-        `${this.apiUrl}/api/auth/refresh`,
-        { refreshToken },
-      )
+      .post<{
+        data: { accessToken: string; expiresIn: number };
+        success: boolean;
+      }>(`${this.apiUrl}/api/auth/refresh`, { refreshToken })
       .pipe(
         tap((response) => {
           const result = response.data;
@@ -108,7 +123,12 @@ export class AuthService {
     return Date.now() > expiresAt - 60000;
   }
 
-  private storeTokens(tokens: AuthTokens, storeId: string | undefined, email?: string, cellphone?: string): void {
+  private storeTokens(
+    tokens: AuthTokens,
+    storeId: string | undefined,
+    email?: string,
+    cellphone?: string,
+  ): void {
     const decoded = this.decodeJwt(tokens.accessToken);
     const expiresAt = Date.now() + tokens.expiresIn * 1000;
 
@@ -155,7 +175,11 @@ export class AuthService {
     return INITIAL_STATE;
   }
 
-  private decodeJwt(token: string): { sub: string; role: UserRole; storeId: string } {
+  private decodeJwt(token: string): {
+    sub: string;
+    role: UserRole;
+    storeId: string;
+  } {
     const parts = token.split('.');
     if (parts.length !== 3) throw new Error('Invalid token');
 
