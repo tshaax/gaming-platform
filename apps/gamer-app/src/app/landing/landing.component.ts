@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '@org/fe/auth';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-landing',
@@ -73,6 +74,7 @@ export class LandingComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private http = inject(HttpClient);
+  private apiUrl = environment.apiUrl;
 
   userInfo = signal<{ email?: string | null; cellphone?: string | null; role?: string; userId?: string } | null>(null);
   stores = signal<Array<{ id: string; name: string; slug: string }>>([]);
@@ -91,7 +93,7 @@ export class LandingComponent implements OnInit {
 
   private fetchStores(): void {
     this.http.get<{ data: Array<{ id: string; name: string; slug: string }>; success: boolean }>(
-      'http://localhost:3333/api/auth/stores'
+      `${this.apiUrl}/api/auth/stores`
     ).subscribe({
       next: (response) => {
         if (response.success && response.data) {

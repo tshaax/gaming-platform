@@ -132,4 +132,26 @@ export class PromotionService {
   async deletePromotion(id: string): Promise<boolean> {
     return this.promotions.delete(id);
   }
+
+  async lookupPromoCode(promoCode: string, storeId?: string): Promise<Promotion | null> {
+    const code = promoCode.toUpperCase();
+    const result = Array.from(this.promotions.values()).find((p) => {
+      const codeMatch = p.promoCode.toUpperCase() === code;
+      const storeMatch = !storeId || p.storeId === storeId || p.storeId === 'all';
+      const statusMatch = p.status === 'active';
+
+      // Check if promo is within valid date range
+      const now = new Date();
+      const startDate = new Date(p.startDate);
+      const endDate = new Date(p.endDate);
+      const dateMatch = now >= startDate && now <= endDate;
+
+      // Check if max usage reached
+      const usageMatch = !p.maxUsage || p.currentUsage < p.maxUsage;
+
+      return codeMatch && storeMatch && statusMatch && dateMatch && usageMatch;
+    });
+
+    return result || null;
+  }
 }

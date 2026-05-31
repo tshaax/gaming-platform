@@ -6,8 +6,9 @@ import {
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { authInterceptor } from '@org/fe/auth';
+import { authInterceptor, API_URL } from '@org/fe/auth';
 import { appRoutes } from './app.routes';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,5 +17,9 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
+    {
+      provide: API_URL,
+      useValue: environment.apiUrl,
+    },
   ],
 };

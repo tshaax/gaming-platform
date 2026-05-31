@@ -24,3 +24,113 @@ To prepare for this change:
 - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
 See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 [39m[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/7ffb09f0-1579-4861-9b7b-c7973c2e7872
+For help, see: https://nodejs.org/en/docs/inspector
+[39m[22m
+[1m[31mDebugger listening on ws://localhost:9229/7ea2faa0-2e82-495f-839b-2e0279a17c02
+For help, see: https://nodejs.org/en/docs/inspector
+[39m[22m
+[1m[31mError: Cannot find module './lib/seed'
+Require stack:
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\db\src\index.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\auth.service.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\index.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
+    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
+    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+    at require (node:internal/modules/helpers:138:16)
+    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\libs\api\db\src\index.ts:2:31)
+    at Module._compile (node:internal/modules/cjs/loader:1565:14)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/19d799ec-6c83-4b37-8682-8b2412ad8796
+For help, see: https://nodejs.org/en/docs/inspector
+[39m[22m
+[1m[31mError: Cannot find module './lib/seed'
+Require stack:
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\db\src\index.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\auth.service.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\index.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
+    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
+    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+    at require (node:internal/modules/helpers:138:16)
+    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\libs\api\db\src\index.ts:2:31)
+    at Module._compile (node:internal/modules/cjs/loader:1565:14)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/eb5866fe-a08a-4fcf-9f11-f506ead840b4
+For help, see: https://nodejs.org/en/docs/inspector
+[39m[22m
+[1m[31mError: Cannot find module './lib/seed'
+Require stack:
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\db\src\index.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\auth.service.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\index.js
+- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
+    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
+    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
+    at Module.require (node:internal/modules/cjs/loader:1340:12)
+    at require (node:internal/modules/helpers:138:16)
+    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\libs\api\db\src\index.ts:2:31)
+    at Module._compile (node:internal/modules/cjs/loader:1565:14)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mDebugger listening on ws://localhost:9229/2a1adde5-e4a1-4353-9b96-0d6c7edf2eb9
+For help, see: https://nodejs.org/en/docs/inspector
+[39m[22m
+Starting seed...
+[1m[31m(node:19352) ExperimentalWarning: CommonJS module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\api.token.js is loading ES Module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@angular\core\fesm2022\core.mjs using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[39m[22m
+[1m[31m(node:19352) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+[39m[22m
+[ ready ] http://localhost:8080
+✓ Test store already exists: d9718397-16e5-4735-ae1c-5ae9243be929
+✓ admin user already exists: admin@playground.com
+✓ Assigned admin role at test store
+✓ cashier user already exists: cashier@playground.com
+✓ Assigned cashier role at test store
+✓ gamer user already exists: gamer@playground.com
+✓ Assigned gamer role at test store
+✅ Seed completed successfully!
+Test Accounts:
+────────────────────────────────────────────────────────────────────────────────
+Role: ADMIN
+  Email:    admin@playground.com
+  Phone:    +1-555-0001
+  Password: admin123
+Role: CASHIER
+  Email:    cashier@playground.com
+  Phone:    +1-555-0002
+  Password: cashier123
+Role: GAMER
+  Email:    gamer@playground.com
+  Phone:    +1-555-0003
+  Password: gamer123
+────────────────────────────────────────────────────────────────────────────────

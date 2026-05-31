@@ -151,9 +151,17 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     requireRole('admin'),
     async (req: Request, res: Response) => {
       try {
-        const user = (req as any).user;
-        const storeId = user.storeId;
-        const input = req.body as CreateStationRequest;
+        const input = req.body as CreateStationRequest & { storeId: string };
+        const storeId = input.storeId;
+
+        if (!storeId) {
+          res.status(400).json({
+            data: null,
+            success: false,
+            error: 'storeId is required',
+          });
+          return;
+        }
 
         const station = await gamingSessionService.createGamingStation(storeId, input.name);
         const body: ApiResponse<typeof station> = { data: station, success: true };
@@ -217,9 +225,17 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     requireRole('admin'),
     async (req: Request, res: Response) => {
       try {
-        const user = (req as any).user;
-        const storeId = user.storeId;
-        const input = req.body as CreateDurationRequest;
+        const input = req.body as CreateDurationRequest & { storeId: string };
+        const storeId = input.storeId;
+
+        if (!storeId) {
+          res.status(400).json({
+            data: null,
+            success: false,
+            error: 'storeId is required',
+          });
+          return;
+        }
 
         const option = await gamingSessionService.createDurationOption(storeId, input.minutes);
         const body: ApiResponse<typeof option> = { data: option, success: true };
@@ -283,9 +299,17 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     requireRole('admin'),
     async (req: Request, res: Response) => {
       try {
-        const user = (req as any).user;
-        const storeId = user.storeId;
-        const input = req.body as CreateRateRequest;
+        const input = req.body as CreateRateRequest & { storeId: string };
+        const storeId = input.storeId;
+
+        if (!storeId) {
+          res.status(400).json({
+            data: null,
+            success: false,
+            error: 'storeId is required',
+          });
+          return;
+        }
 
         const option = await gamingSessionService.createRateOption(
           storeId,

@@ -1,0 +1,38 @@
+
+🧪 Testing Login Flow for All Apps
+
+════════════════════════════════════════════════════════════════════════════════
+
+📱 Testing: Admin App
+────────────────────────────────────────────────────────────────────────────────
+  1️⃣  Navigating to http://localhost:4201/login...
+  ⚠️  Elements not loading, refreshing page...
+  ❌ Error testing Admin App: locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#credential-input') to be visible[22m
+
+
+📱 Testing: Cashier App
+────────────────────────────────────────────────────────────────────────────────
+  1️⃣  Navigating to http://localhost:4202/login...
+  ⚠️  Elements not loading, refreshing page...
+  ❌ Error testing Cashier App: locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#credential-input') to be visible[22m
+
+
+📱 Testing: Gamer App
+────────────────────────────────────────────────────────────────────────────────
+  1️⃣  Navigating to http://localhost:4203/login...
+  ⚠️  Elements not loading, refreshing page...
+  ❌ Error testing Gamer App: locator.waitFor: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for locator('#credential-input') to be visible[22m
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📊 Test Summary:
+   ✅ Passed: 0/3
+   ❌ Failed: 3/3
+

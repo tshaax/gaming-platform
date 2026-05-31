@@ -2,7 +2,9 @@
   "name": "@org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "db:seed": "node --import=tsx libs/api/db/src/lib/seed.ts"
+  },
   "private": true,
   "dependencies": {
     "@angular-devkit/build-angular": "21.2.7",

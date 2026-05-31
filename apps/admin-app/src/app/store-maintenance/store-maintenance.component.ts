@@ -55,7 +55,7 @@ interface Player {
   updatedAt: string;
 }
 
-type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
+type TabType = 'stores' | 'stations' | 'pricing' | 'players';
 
 @Component({
   selector: 'app-store-maintenance',
@@ -143,22 +143,13 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
             <span>Stations</span>
           </button>
           <button
-            (click)="activeTab.set('durations')"
-            [class.border-b-2]="activeTab() === 'durations'"
-            [class.border-cyan-400]="activeTab() === 'durations'"
+            (click)="activeTab.set('pricing')"
+            [class.border-b-2]="activeTab() === 'pricing'"
+            [class.border-cyan-400]="activeTab() === 'pricing'"
             class="px-6 py-4 text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2 font-semibold"
           >
-            <span>⏱️</span>
-            <span>Durations</span>
-          </button>
-          <button
-            (click)="activeTab.set('rates')"
-            [class.border-b-2]="activeTab() === 'rates'"
-            [class.border-cyan-400]="activeTab() === 'rates'"
-            class="px-6 py-4 text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2 font-semibold"
-          >
-            <span>💰</span>
-            <span>Rates</span>
+            <span>⏱️💰</span>
+            <span>Pricing & Duration</span>
           </button>
           <button
             (click)="activeTab.set('players')"
@@ -365,7 +356,8 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
                         (change)="
                           selectedStoreForSettings.set(
                             $any($event.target).value
-                          )
+                          );
+                          loadStations();
                         "
                         [value]="selectedStoreForSettings()"
                         class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
@@ -385,12 +377,12 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
                         <form
                           [formGroup]="stationForm"
                           (ngSubmit)="addStation()"
-                          class="space-y-4"
+                          class="space-y-4 p-4 bg-white/5 rounded-lg border border-white/10"
                         >
                           <div>
                             <label
                               class="block text-slate-300 text-sm font-semibold mb-2"
-                              >Station Name</label
+                              >Station Name <span class="text-red-400">*</span></label
                             >
                             <input
                               type="text"
@@ -398,6 +390,9 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
                               placeholder="Station 1"
                               class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                             />
+                            @if (stationForm.get('name')?.hasError('required') && stationForm.get('name')?.touched) {
+                              <p class="text-red-400 text-xs mt-1">Station name is required</p>
+                            }
                           </div>
                           <button
                             type="submit"
@@ -418,15 +413,18 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
                           </h3>
                           <div class="space-y-3">
                             @if (stations().length === 0) {
-                              <p class="text-slate-400">No stations yet</p>
+                              <p class="text-slate-400 text-sm">No stations for this store yet</p>
                             } @else {
                               @for (station of stations(); track station.id) {
                                 <div
-                                  class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
+                                  class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg hover:border-cyan-400/50 transition-colors"
                                 >
-                                  <span class="text-white font-semibold">{{
-                                    station.name
-                                  }}</span>
+                                  <div>
+                                    <span class="text-white font-semibold">{{
+                                      station.name
+                                    }}</span>
+                                    <p class="text-slate-400 text-xs">ID: {{ station.id.slice(0, 8) }}...</p>
+                                  </div>
                                   <button
                                     (click)="deleteStation(station.id)"
                                     class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
@@ -446,15 +444,15 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
             </div>
           }
 
-          <!-- Durations Tab -->
-          @if (activeTab() === 'durations') {
-            <div class="max-w-2xl">
+          <!-- Pricing & Duration Tab -->
+          @if (activeTab() === 'pricing') {
+            <div class="w-full max-w-4xl">
               <div
                 class="bg-gradient-to-br from-blue-600/10 to-slate-600/10 backdrop-blur-md rounded-xl p-6 border border-white/10"
               >
                 <div class="mb-6">
                   <h2 class="text-xl font-bold text-white mb-4">
-                    Manage Duration Options
+                    Manage Pricing & Duration
                   </h2>
                   <div class="space-y-4">
                     <div>
@@ -466,7 +464,9 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
                         (change)="
                           selectedStoreForSettings.set(
                             $any($event.target).value
-                          )
+                          );
+                          loadDurations();
+                          loadRates();
                         "
                         [value]="selectedStoreForSettings()"
                         class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
@@ -480,131 +480,46 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
 
                     @if (selectedStoreForSettings()) {
                       <div class="pt-4 border-t border-white/10">
+                        <!-- Combined Form for Duration and Rate -->
                         <h3 class="text-white font-bold mb-4">
-                          Add Duration Option
+                          Add Duration & Rate Option
                         </h3>
                         <form
-                          [formGroup]="durationForm"
-                          (ngSubmit)="addDuration()"
-                          class="space-y-4"
+                          [formGroup]="pricingForm"
+                          (ngSubmit)="addPricing()"
+                          class="space-y-4 mb-8 p-4 bg-white/5 rounded-lg border border-white/10"
                         >
-                          <div>
-                            <label
-                              class="block text-slate-300 text-sm font-semibold mb-2"
-                              >Minutes</label
-                            >
-                            <input
-                              type="number"
-                              formControlName="minutes"
-                              placeholder="30"
-                              class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
-                            />
-                          </div>
-                          <button
-                            type="submit"
-                            [disabled]="
-                              !durationForm.valid || isLoadingSettings()
-                            "
-                            class="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
-                          >
-                            {{
-                              isLoadingSettings() ? 'Adding...' : 'Add Duration'
-                            }}
-                          </button>
-                        </form>
-
-                        <div class="mt-8 pt-6 border-t border-white/10">
-                          <h3 class="text-white font-bold mb-4">
-                            Available Durations
-                          </h3>
-                          <div class="space-y-3">
-                            @if (durations().length === 0) {
-                              <p class="text-slate-400">No durations yet</p>
-                            } @else {
-                              @for (
-                                duration of durations();
-                                track duration.id
-                              ) {
-                                <div
-                                  class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
-                                >
-                                  <span class="text-white font-semibold"
-                                    >{{ duration.minutes }} minutes</span
-                                  >
-                                  <button
-                                    (click)="deleteDuration(duration.id)"
-                                    class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
-                                  >
-                                    Delete
-                                  </button>
-                                </div>
-                              }
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
-
-          <!-- Rates Tab -->
-          @if (activeTab() === 'rates') {
-            <div class="max-w-2xl">
-              <div
-                class="bg-gradient-to-br from-blue-600/10 to-slate-600/10 backdrop-blur-md rounded-xl p-6 border border-white/10"
-              >
-                <div class="mb-6">
-                  <h2 class="text-xl font-bold text-white mb-4">
-                    Manage Rate Options
-                  </h2>
-                  <div class="space-y-4">
-                    <div>
-                      <label
-                        class="block text-slate-300 text-sm font-semibold mb-2"
-                        >Select Store</label
-                      >
-                      <select
-                        (change)="
-                          selectedStoreForSettings.set(
-                            $any($event.target).value
-                          )
-                        "
-                        [value]="selectedStoreForSettings()"
-                        class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
-                      >
-                        <option value="">Choose a store...</option>
-                        @for (store of stores(); track store.id) {
-                          <option [value]="store.id">{{ store.name }}</option>
-                        }
-                      </select>
-                    </div>
-
-                    @if (selectedStoreForSettings()) {
-                      <div class="pt-4 border-t border-white/10">
-                        <h3 class="text-white font-bold mb-4">
-                          Add Rate Option
-                        </h3>
-                        <form
-                          [formGroup]="rateForm"
-                          (ngSubmit)="addRate()"
-                          class="space-y-4"
-                        >
-                          <div class="grid grid-cols-2 gap-4">
+                          <div class="grid grid-cols-3 gap-4">
                             <div>
                               <label
                                 class="block text-slate-300 text-sm font-semibold mb-2"
-                                >Rate/hr ($)</label
+                                >Minutes <span class="text-red-400">*</span></label
+                              >
+                              <input
+                                type="number"
+                                formControlName="minutes"
+                                placeholder="30"
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                              />
+                              @if (pricingForm.get('minutes')?.hasError('required') && pricingForm.get('minutes')?.touched) {
+                                <p class="text-red-400 text-xs mt-1">Duration is required</p>
+                              }
+                            </div>
+                            <div>
+                              <label
+                                class="block text-slate-300 text-sm font-semibold mb-2"
+                                >Rate/hr ($) <span class="text-red-400">*</span></label
                               >
                               <input
                                 type="number"
                                 formControlName="ratePerHour"
                                 placeholder="10.00"
                                 step="0.01"
-                                class="w-full px-4 py-2 bg-black/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                               />
+                              @if (pricingForm.get('ratePerHour')?.hasError('required') && pricingForm.get('ratePerHour')?.touched) {
+                                <p class="text-red-400 text-xs mt-1">Rate is required</p>
+                              }
                             </div>
                             <div>
                               <label
@@ -621,42 +536,78 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
                           </div>
                           <button
                             type="submit"
-                            [disabled]="!rateForm.valid || isLoadingSettings()"
-                            class="w-full px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+                            [disabled]="
+                              !pricingForm.valid || isLoadingSettings()
+                            "
+                            class="w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
                           >
-                            {{ isLoadingSettings() ? 'Adding...' : 'Add Rate' }}
+                            {{ isLoadingSettings() ? 'Saving...' : 'Save Duration & Rate' }}
                           </button>
                         </form>
 
-                        <div class="mt-8 pt-6 border-t border-white/10">
-                          <h3 class="text-white font-bold mb-4">
-                            Available Rates
-                          </h3>
-                          <div class="space-y-3">
-                            @if (rates().length === 0) {
-                              <p class="text-slate-400">No rates yet</p>
-                            } @else {
-                              @for (rate of rates(); track rate.id) {
-                                <div
-                                  class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
-                                >
-                                  <span class="text-white font-semibold">
-                                    $ {{ rate.ratePerHour }}/hr
-                                    @if (rate.label) {
-                                      <span class="text-slate-400 text-sm"
-                                        >({{ rate.label }})</span
-                                      >
-                                    }
-                                  </span>
-                                  <button
-                                    (click)="deleteRate(rate.id)"
-                                    class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
+                        <div class="grid grid-cols-2 gap-8">
+                          <!-- Duration Options Display -->
+                          <div>
+                            <h4 class="text-white font-bold mb-3">
+                              Available Durations
+                            </h4>
+                            <div class="space-y-2">
+                              @if (durations().length === 0) {
+                                <p class="text-slate-400 text-sm">No durations yet</p>
+                              } @else {
+                                @for (
+                                  duration of durations();
+                                  track duration.id
+                                ) {
+                                  <div
+                                    class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
                                   >
-                                    Delete
-                                  </button>
-                                </div>
+                                    <span class="text-white font-semibold"
+                                      >{{ duration.minutes }} min</span
+                                    >
+                                    <button
+                                      (click)="deleteDuration(duration.id)"
+                                      class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                }
                               }
-                            }
+                            </div>
+                          </div>
+
+                          <!-- Rate Options Display -->
+                          <div>
+                            <h4 class="text-white font-bold mb-3">
+                              Available Rates
+                            </h4>
+                            <div class="space-y-2">
+                              @if (rates().length === 0) {
+                                <p class="text-slate-400 text-sm">No rates yet</p>
+                              } @else {
+                                @for (rate of rates(); track rate.id) {
+                                  <div
+                                    class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
+                                  >
+                                    <span class="text-white font-semibold">
+                                      $ {{ rate.ratePerHour }}/hr
+                                      @if (rate.label) {
+                                        <span class="text-slate-400 text-sm"
+                                          >({{ rate.label }})</span
+                                        >
+                                      }
+                                    </span>
+                                    <button
+                                      (click)="deleteRate(rate.id)"
+                                      class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                }
+                              }
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1187,8 +1138,7 @@ export class StoreMaintenanceComponent implements OnInit {
   form: FormGroup;
   editForm: FormGroup;
   stationForm: FormGroup;
-  durationForm: FormGroup;
-  rateForm: FormGroup;
+  pricingForm: FormGroup;
   playerForm: FormGroup;
 
   stores = signal<Store[]>([]);
@@ -1271,11 +1221,8 @@ export class StoreMaintenanceComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2)]],
     });
 
-    this.durationForm = this.fb.group({
+    this.pricingForm = this.fb.group({
       minutes: ['', [Validators.required, Validators.min(1)]],
-    });
-
-    this.rateForm = this.fb.group({
       ratePerHour: ['', [Validators.required, Validators.min(0)]],
       label: [''],
     });
@@ -1290,6 +1237,7 @@ export class StoreMaintenanceComponent implements OnInit {
   ngOnInit(): void {
     this.loadStores();
     this.loadPlayers();
+    // Load stations when activeTab changes to 'stations'
   }
 
   addStation(): void {
@@ -1297,8 +1245,11 @@ export class StoreMaintenanceComponent implements OnInit {
     this.isLoadingSettings.set(true);
 
     const { name } = this.stationForm.value;
+    const storeId = this.selectedStoreForSettings();
+
     this.http
       .post(`${environment.apiUrl}/api/gaming-sessions/stations`, {
+        storeId,
         name,
       })
       .subscribe({
@@ -1331,29 +1282,68 @@ export class StoreMaintenanceComponent implements OnInit {
       });
   }
 
-  addDuration(): void {
-    if (!this.durationForm.valid || !this.selectedStoreForSettings()) return;
+  addPricing(): void {
+    if (!this.pricingForm.valid || !this.selectedStoreForSettings()) return;
     this.isLoadingSettings.set(true);
 
-    const { minutes } = this.durationForm.value;
+    const { minutes, ratePerHour, label } = this.pricingForm.value;
+    const storeId = this.selectedStoreForSettings();
+
+    // Create both duration and rate in parallel
+    let completedCount = 0;
+    let hasError = false;
+
+    // Add duration
     this.http
       .post(`${environment.apiUrl}/api/gaming-sessions/durations`, {
+        storeId,
         minutes: parseInt(minutes),
       })
       .subscribe({
         next: () => {
-          this.durationForm.reset();
-          this.successMessage.set('Duration added successfully!');
-          setTimeout(() => this.successMessage.set(null), 3000);
-          this.loadDurations();
-          this.isLoadingSettings.set(false);
+          completedCount++;
+          if (completedCount === 2 && !hasError) {
+            this.finishPricingAdd();
+          }
         },
         error: (err) => {
+          hasError = true;
           console.error('Failed to add duration:', err);
           this.errorMessage.set('Failed to add duration');
           this.isLoadingSettings.set(false);
         },
       });
+
+    // Add rate
+    this.http
+      .post(`${environment.apiUrl}/api/gaming-sessions/rates`, {
+        storeId,
+        ratePerHour: parseFloat(ratePerHour).toString(),
+        label: label || undefined,
+      })
+      .subscribe({
+        next: () => {
+          completedCount++;
+          if (completedCount === 2 && !hasError) {
+            this.finishPricingAdd();
+          }
+        },
+        error: (err) => {
+          hasError = true;
+          console.error('Failed to add rate:', err);
+          this.errorMessage.set('Failed to add rate');
+          this.isLoadingSettings.set(false);
+        },
+      });
+  }
+
+  private finishPricingAdd(): void {
+    this.pricingForm.reset();
+    this.successMessage.set('Duration and Rate added successfully!');
+    setTimeout(() => this.successMessage.set(null), 3000);
+    this.loadDurations();
+    this.loadRates();
+    this.isLoadingSettings.set(false);
   }
 
   deleteDuration(durationId: string): void {
@@ -1364,36 +1354,13 @@ export class StoreMaintenanceComponent implements OnInit {
       )
       .subscribe({
         next: () => {
+          this.successMessage.set('Duration deleted successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
           this.loadDurations();
         },
         error: (err) => {
           console.error('Failed to delete duration:', err);
-        },
-      });
-  }
-
-  addRate(): void {
-    if (!this.rateForm.valid || !this.selectedStoreForSettings()) return;
-    this.isLoadingSettings.set(true);
-
-    const { ratePerHour, label } = this.rateForm.value;
-    this.http
-      .post(`${environment.apiUrl}/api/gaming-sessions/rates`, {
-        ratePerHour: parseFloat(ratePerHour).toString(),
-        label: label || undefined,
-      })
-      .subscribe({
-        next: () => {
-          this.rateForm.reset();
-          this.successMessage.set('Rate added successfully!');
-          setTimeout(() => this.successMessage.set(null), 3000);
-          this.loadRates();
-          this.isLoadingSettings.set(false);
-        },
-        error: (err) => {
-          console.error('Failed to add rate:', err);
-          this.errorMessage.set('Failed to add rate');
-          this.isLoadingSettings.set(false);
+          this.errorMessage.set('Failed to delete duration');
         },
       });
   }
@@ -1404,10 +1371,13 @@ export class StoreMaintenanceComponent implements OnInit {
       .delete(`${environment.apiUrl}/api/gaming-sessions/rates/${rateId}`)
       .subscribe({
         next: () => {
+          this.successMessage.set('Rate deleted successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
           this.loadRates();
         },
         error: (err) => {
           console.error('Failed to delete rate:', err);
+          this.errorMessage.set('Failed to delete rate');
         },
       });
   }
@@ -1750,8 +1720,11 @@ export class StoreMaintenanceComponent implements OnInit {
       });
   }
 
-  private loadStations(): void {
-    if (!this.selectedStoreForSettings()) return;
+  loadStations(): void {
+    if (!this.selectedStoreForSettings()) {
+      this.stations.set([]);
+      return;
+    }
     this.http
       .get<{
         data: GamingStation[];
@@ -1760,16 +1733,20 @@ export class StoreMaintenanceComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          this.stations.set(response.data);
+          this.stations.set(response.data || []);
         },
         error: (err) => {
           console.error('Failed to load stations:', err);
+          this.stations.set([]);
         },
       });
   }
 
-  private loadDurations(): void {
-    if (!this.selectedStoreForSettings()) return;
+  loadDurations(): void {
+    if (!this.selectedStoreForSettings()) {
+      this.durations.set([]);
+      return;
+    }
     this.http
       .get<{
         data: DurationOption[];
@@ -1778,16 +1755,20 @@ export class StoreMaintenanceComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          this.durations.set(response.data);
+          this.durations.set(response.data || []);
         },
         error: (err) => {
           console.error('Failed to load durations:', err);
+          this.durations.set([]);
         },
       });
   }
 
-  private loadRates(): void {
-    if (!this.selectedStoreForSettings()) return;
+  loadRates(): void {
+    if (!this.selectedStoreForSettings()) {
+      this.rates.set([]);
+      return;
+    }
     this.http
       .get<{
         data: RateOption[];
@@ -1796,10 +1777,11 @@ export class StoreMaintenanceComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          this.rates.set(response.data);
+          this.rates.set(response.data || []);
         },
         error: (err) => {
           console.error('Failed to load rates:', err);
+          this.rates.set([]);
         },
       });
   }

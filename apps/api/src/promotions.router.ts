@@ -114,6 +114,38 @@ export function createPromotionRouter(promotionService: PromotionService): Route
     },
   );
 
+  // Lookup promo code
+  router.post('/lookup', authenticate, async (req: Request, res: Response) => {
+    try {
+      const { promoCode, storeId } = req.body;
+      if (!promoCode) {
+        const body: ApiResponse<null> = {
+          data: null,
+          success: false,
+          error: 'Promo code is required',
+        };
+        res.status(400).json(body);
+        return;
+      }
+
+      const promotion = await promotionService.lookupPromoCode(promoCode, storeId);
+      if (!promotion) {
+        const body: ApiResponse<null> = {
+          data: null,
+          success: false,
+          error: 'Promo code not found or expired',
+        };
+        res.status(404).json(body);
+        return;
+      }
+
+      const body: ApiResponse<typeof promotion> = { data: promotion, success: true };
+      res.json(body);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   return router;
 }
 
