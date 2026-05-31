@@ -1,0 +1,7 @@
+{
+  "name": "api-leaderboard",
+  "projectType": "library",
+  "sourceRoot": "libs/api/leaderboard/src",
+  "prefix": "org",
+  "targets": {}
+}

@@ -1,0 +1,7 @@
+{
+  "name": "api-player",
+  "projectType": "library",
+  "sourceRoot": "libs/api/player/src",
+  "prefix": "org",
+  "targets": {}
+}

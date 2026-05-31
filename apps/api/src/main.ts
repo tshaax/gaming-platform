@@ -9,6 +9,13 @@ import {
   GamingSessionService,
   createGamingSessionRouter,
 } from '@org/api/gaming-session';
+import { EventService, createEventRouter } from '@org/api/event';
+import { PlayerService, createPlayerRouter } from '@org/api/player';
+import { AnalyticsService, createAnalyticsRouter } from '@org/api/analytics';
+import { LeaderboardService } from './leaderboard.service';
+import { createLeaderboardRouter } from './leaderboard.router';
+import { PromotionService } from './promotions.service';
+import { createPromotionRouter } from './promotions.router';
 import {
   ApiResponse,
   Product,
@@ -19,10 +26,11 @@ import {
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 8080;
 
+// Initialize express app
 const app = express();
 const productsService = new ProductsService();
 
-// Middleware
+// Middleware setup
 app.use(express.json());
 
 // CORS — allow configured origins, or all in development
@@ -77,6 +85,21 @@ app.use(
   '/api/gaming-sessions',
   createGamingSessionRouter(new GamingSessionService(pool)),
 );
+
+// Events
+app.use('/api/events', createEventRouter(new EventService(pool)));
+
+// Players
+app.use('/api/players', createPlayerRouter(new PlayerService(pool)));
+
+// Analytics
+app.use('/api/analytics', createAnalyticsRouter(new AnalyticsService(pool)));
+
+// Leaderboard
+app.use('/api/leaderboard', createLeaderboardRouter(new LeaderboardService(pool)));
+
+// Promotions
+app.use('/api/promotions', createPromotionRouter(new PromotionService(pool)));
 
 app.get('/', (req, res) => {
   res.send({ message: 'Hello API' });

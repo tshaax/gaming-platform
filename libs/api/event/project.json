@@ -1,0 +1,7 @@
+{
+  "name": "api-event",
+  "projectType": "library",
+  "sourceRoot": "libs/api/event/src",
+  "prefix": "org",
+  "targets": {}
+}

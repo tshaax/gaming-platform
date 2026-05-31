@@ -46,7 +46,16 @@ interface RateOption {
   isActive: boolean;
 }
 
-type TabType = 'stores' | 'stations' | 'durations' | 'rates';
+interface Player {
+  id: string;
+  email?: string;
+  cellphone?: string;
+  stores: Array<{ id: string; name: string; role: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type TabType = 'stores' | 'stations' | 'durations' | 'rates' | 'players';
 
 @Component({
   selector: 'app-store-maintenance',
@@ -150,6 +159,15 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
           >
             <span>💰</span>
             <span>Rates</span>
+          </button>
+          <button
+            (click)="activeTab.set('players')"
+            [class.border-b-2]="activeTab() === 'players'"
+            [class.border-cyan-400]="activeTab() === 'players'"
+            class="px-6 py-4 text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2 font-semibold"
+          >
+            <span>👥</span>
+            <span>Players</span>
           </button>
         </div>
 
@@ -350,7 +368,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                           )
                         "
                         [value]="selectedStoreForSettings()"
-                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
+                        class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
                       >
                         <option value="">Choose a store...</option>
                         @for (store of stores(); track store.id) {
@@ -451,7 +469,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                           )
                         "
                         [value]="selectedStoreForSettings()"
-                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
+                        class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
                       >
                         <option value="">Choose a store...</option>
                         @for (store of stores(); track store.id) {
@@ -555,7 +573,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                           )
                         "
                         [value]="selectedStoreForSettings()"
-                        class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
+                        class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
                       >
                         <option value="">Choose a store...</option>
                         @for (store of stores(); track store.id) {
@@ -585,7 +603,7 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                                 formControlName="ratePerHour"
                                 placeholder="10.00"
                                 step="0.01"
-                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                                class="w-full px-4 py-2 bg-black/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                               />
                             </div>
                             <div>
@@ -645,6 +663,183 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                     }
                   </div>
                 </div>
+              </div>
+            </div>
+          }
+
+          <!-- Players Tab -->
+          @if (activeTab() === 'players') {
+            <div class="w-full">
+              <div
+                class="bg-gradient-to-br from-blue-600/10 to-slate-600/10 backdrop-blur-md rounded-xl p-6 border border-white/10"
+              >
+                <div class="mb-6 flex items-center justify-between">
+                  <div>
+                    <h2 class="text-xl font-bold text-white">Manage Players</h2>
+                    <p class="text-slate-400 text-sm">
+                      @if (playerFilterText()) {
+                        Showing {{ allPlayers().filter(p => (p.email || p.cellphone || p.id).toLowerCase().includes(playerFilterText().toLowerCase())).length }}
+                      } @else {
+                        {{ allPlayers().length }}
+                      }
+                      player(s)
+                    </p>
+                  </div>
+                  <button
+                    (click)="showCreatePlayerForm.set(true)"
+                    class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span>➕</span>
+                    <span>Add Player</span>
+                  </button>
+                </div>
+
+                <!-- Filter Input -->
+                <div class="mb-6">
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      [value]="playerFilterText()"
+                      (input)="playerFilterText.set($any($event.target).value)"
+                      placeholder="Filter by email, phone, or player name..."
+                      class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                    />
+                    <button
+                      (click)="playerFilterText.set('')"
+                      class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white transition-colors"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Players List -->
+                @if (allPlayers().length === 0) {
+                  <p class="text-slate-400 text-center py-12">No players yet</p>
+                } @else {
+                  @let filteredPlayers = allPlayers().filter(p =>
+                    (p.email || p.cellphone || p.id).toLowerCase().includes(playerFilterText().toLowerCase())
+                  );
+                  @if (filteredPlayers.length === 0) {
+                    <p class="text-slate-400 text-center py-12">No players match your filter</p>
+                  } @else {
+                    <div class="grid grid-cols-3 gap-4">
+                      @for (player of filteredPlayers; track player.id) {
+                        <div
+                          class="bg-gradient-to-br from-blue-500/10 to-slate-600/10 border border-white/10 rounded-lg p-5 hover:border-cyan-400/50 transition-all"
+                        >
+                          <!-- Header with Name and Action Icons -->
+                          <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="flex-1 min-w-0">
+                              <h4 class="text-white font-bold text-lg truncate">
+                                {{
+                                  player.email ||
+                                    player.cellphone ||
+                                    'Player ' + player.id.slice(0, 8)
+                                }}
+                              </h4>
+                              <p class="text-slate-400 text-sm truncate">
+                                {{
+                                  player.cellphone ||
+                                    player.email ||
+                                    'No contact info'
+                                }}
+                              </p>
+                            </div>
+                            <!-- Action Icons -->
+                            <div class="flex gap-1 flex-shrink-0">
+                              <button
+                                (click)="editingPlayerId.set(player.id); playerForm.patchValue({email: player.email || '', cellphone: player.cellphone || '', password: ''}); selectedPlayersStores.set(player.stores.map(s => s.id)); showCreatePlayerForm.set(true)"
+                                title="Edit player"
+                                class="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded transition-colors text-lg"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                (click)="deletePlayer(player.id)"
+                                title="Delete player"
+                                class="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors text-lg"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+
+                        <div class="mb-4 pb-3 border-b border-white/10">
+                          <p class="text-slate-400 text-xs font-semibold mb-2">
+                            LINKED STORES ({{ player.stores.length }})
+                          </p>
+                          @if (player.stores.length === 0) {
+                            <p class="text-slate-500 text-xs italic">
+                              Not linked to any stores
+                            </p>
+                          } @else {
+                            <div class="space-y-1">
+                              @for (store of player.stores; track store.id) {
+                                <div
+                                  class="flex items-center justify-between bg-cyan-500/20 border border-cyan-400/50 rounded px-2 py-1"
+                                >
+                                  <span
+                                    class="text-cyan-300 text-xs truncate"
+                                    >{{ store.name }}</span
+                                  >
+                                  <button
+                                    (click)="
+                                      unlinkPlayerFromStore(player.id, store.id)
+                                    "
+                                    class="text-cyan-400 hover:text-red-400 text-xs cursor-pointer flex-shrink-0 ml-1"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <!-- Link to Store -->
+                        <div class="space-y-2 mb-3">
+                          <select
+                            (change)="
+                              selectedStoreForLinking.set(
+                                $any($event.target).value
+                              )
+                            "
+                            [value]="selectedStoreForLinking()"
+                            class="w-full px-3 py-2 bg-blue-900 border border-white/20 rounded text-white text-xs focus:outline-none focus:border-cyan-400"
+                          >
+                            <option value="">Link to store...</option>
+                            @for (store of stores(); track store.id) {
+                              @if (
+                                !player.stores.some((s) => s.id === store.id)
+                              ) {
+                                <option [value]="store.id">
+                                  {{ store.name }}
+                                </option>
+                              }
+                            }
+                          </select>
+                          <button
+                            (click)="
+                              linkPlayerToStore(
+                                player.id,
+                                selectedStoreForLinking()
+                              )
+                            "
+                            [disabled]="
+                              !selectedStoreForLinking() || isLoadingSettings()
+                            "
+                            class="w-full px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white text-xs rounded transition-colors font-semibold"
+                          >
+                            Link Store
+                          </button>
+                        </div>
+
+                      </div>
+                      }
+                    </div>
+                  }
+                }
               </div>
             </div>
           }
@@ -744,6 +939,136 @@ type TabType = 'stores' | 'stations' | 'durations' | 'rates';
                 <button
                   type="button"
                   (click)="showCreateModal.set(false); form.reset()"
+                  class="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- Create Player Modal -->
+      @if (showCreatePlayerForm()) {
+        <div
+          class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        >
+          <div
+            class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <div
+              class="p-6 border-b border-white/10 sticky top-0 bg-slate-800/80 backdrop-blur flex items-center justify-between"
+            >
+              <h2 class="text-2xl font-bold text-white">
+                {{ editingPlayerId() ? 'Edit Player' : 'Create New Player' }}
+              </h2>
+              <button
+                (click)="
+                  showCreatePlayerForm.set(false);
+                  playerForm.reset();
+                  selectedPlayersStores.set([]);
+                  editingPlayerId.set(null);
+                "
+                class="text-slate-400 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              [formGroup]="playerForm"
+              (ngSubmit)="editingPlayerId() ? updatePlayer() : createPlayer()"
+              class="p-6 space-y-4"
+            >
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-slate-300 text-sm font-semibold mb-2"
+                    >Email (Optional)</label
+                  >
+                  <input
+                    type="email"
+                    formControlName="email"
+                    placeholder="player@example.com"
+                    class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <div>
+                  <label class="block text-slate-300 text-sm font-semibold mb-2"
+                    >Phone (Optional)</label
+                  >
+                  <input
+                    type="tel"
+                    formControlName="cellphone"
+                    placeholder="+1234567890"
+                    class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-slate-300 text-sm font-semibold mb-2"
+                  >Password</label
+                >
+                <input
+                  type="password"
+                  formControlName="password"
+                  placeholder="Min 8 characters"
+                  class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-300 text-sm font-semibold mb-2"
+                  >Select Stores</label
+                >
+                <div
+                  class="max-h-48 overflow-y-auto bg-white/5 border border-white/20 rounded-lg p-3"
+                >
+                  @for (store of stores(); track store.id) {
+                    <div class="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        [id]="'create-store-' + store.id"
+                        (change)="toggleStoreSelection($event, store.id)"
+                        class="w-4 h-4 rounded cursor-pointer"
+                      />
+                      <label
+                        [for]="'create-store-' + store.id"
+                        class="text-slate-300 cursor-pointer flex-1"
+                        >{{ store.name }}</label
+                      >
+                    </div>
+                  }
+                </div>
+                @if (selectedPlayersStores().length === 0) {
+                  <p class="text-slate-400 text-sm mt-2">
+                    Select at least one store
+                  </p>
+                }
+              </div>
+
+              <div class="flex gap-3 pt-4 mt-6 border-t border-white/10">
+                <button
+                  type="submit"
+                  [disabled]="
+                    !playerForm.valid ||
+                    selectedPlayersStores().length === 0 ||
+                    isLoadingSettings()
+                  "
+                  class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+                >
+                  {{
+                    isLoadingSettings() ? (editingPlayerId() ? 'Updating...' : 'Creating...') : (editingPlayerId() ? 'Update Player' : 'Create Player')
+                  }}
+                </button>
+                <button
+                  type="button"
+                  (click)="
+                    showCreatePlayerForm.set(false);
+                    playerForm.reset();
+                    selectedPlayersStores.set([])
+                  "
                   class="flex-1 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold rounded-lg transition-colors"
                 >
                   Cancel
@@ -864,11 +1189,13 @@ export class StoreMaintenanceComponent implements OnInit {
   stationForm: FormGroup;
   durationForm: FormGroup;
   rateForm: FormGroup;
+  playerForm: FormGroup;
 
   stores = signal<Store[]>([]);
   stations = signal<GamingStation[]>([]);
   durations = signal<DurationOption[]>([]);
   rates = signal<RateOption[]>([]);
+  allPlayers = signal<Player[]>([]);
 
   isLoading = signal(false);
   isLoadingSettings = signal(false);
@@ -879,6 +1206,11 @@ export class StoreMaintenanceComponent implements OnInit {
 
   activeTab = signal<TabType>('stores');
   selectedStoreForSettings = signal<string>('');
+  selectedPlayersStores = signal<string[]>([]);
+  showCreatePlayerForm = signal(false);
+  selectedStoreForLinking = signal<string>('');
+  playerFilterText = signal<string>('');
+  editingPlayerId = signal<string | null>(null);
 
   filterText = signal('');
   viewMode = signal<'cards' | 'table'>('cards');
@@ -947,10 +1279,17 @@ export class StoreMaintenanceComponent implements OnInit {
       ratePerHour: ['', [Validators.required, Validators.min(0)]],
       label: [''],
     });
+
+    this.playerForm = this.fb.group({
+      email: ['', [Validators.email]],
+      cellphone: [''],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    });
   }
 
   ngOnInit(): void {
     this.loadStores();
+    this.loadPlayers();
   }
 
   addStation(): void {
@@ -1073,6 +1412,215 @@ export class StoreMaintenanceComponent implements OnInit {
       });
   }
 
+  createPlayer(): void {
+    if (!this.playerForm.valid || this.selectedPlayersStores().length === 0) {
+      this.errorMessage.set(
+        'Please fill all required fields and select at least one store',
+      );
+      return;
+    }
+
+    const { email, cellphone, password } = this.playerForm.value;
+
+    if (!email && !cellphone) {
+      this.errorMessage.set('At least one of email or phone is required');
+      return;
+    }
+
+    this.isLoadingSettings.set(true);
+    this.errorMessage.set(null);
+
+    const payload = {
+      email: email || undefined,
+      cellphone: cellphone || undefined,
+      password,
+      storeIds: this.selectedPlayersStores(),
+    };
+
+    this.http.post(`${environment.apiUrl}/api/players`, payload).subscribe({
+      next: () => {
+        this.playerForm.reset();
+        this.selectedPlayersStores.set([]);
+        this.successMessage.set('Player created successfully!');
+        setTimeout(() => this.successMessage.set(null), 3000);
+        this.loadPlayers();
+        this.isLoadingSettings.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to create player:', err);
+        this.errorMessage.set(err.error?.error || 'Failed to create player');
+        this.isLoadingSettings.set(false);
+      },
+    });
+  }
+
+  updatePlayer(): void {
+    const playerId = this.editingPlayerId();
+    if (!playerId || this.selectedPlayersStores().length === 0) {
+      this.errorMessage.set('Please select at least one store');
+      return;
+    }
+
+    const { email, cellphone } = this.playerForm.value;
+
+    if (!email && !cellphone) {
+      this.errorMessage.set('At least one of email or phone is required');
+      return;
+    }
+
+    this.isLoadingSettings.set(true);
+    this.errorMessage.set(null);
+
+    const currentStores = this.allPlayers()
+      .find((p) => p.id === playerId)
+      ?.stores.map((s) => s.id) || [];
+    const storesToAdd = this.selectedPlayersStores().filter(
+      (id) => !currentStores.includes(id),
+    );
+    const storesToRemove = currentStores.filter(
+      (id) => !this.selectedPlayersStores().includes(id),
+    );
+
+    let requestCount = 0;
+    let completedCount = 0;
+
+    // Add new stores
+    if (storesToAdd.length > 0) {
+      requestCount++;
+      this.http
+        .post(`${environment.apiUrl}/api/players/${playerId}/stores`, {
+          storeIds: storesToAdd,
+        })
+        .subscribe({
+          next: () => {
+            completedCount++;
+            if (completedCount === requestCount) {
+              this.finishPlayerUpdate();
+            }
+          },
+          error: (err) => {
+            console.error('Failed to add stores:', err);
+            this.errorMessage.set(err.error?.error || 'Failed to update stores');
+            this.isLoadingSettings.set(false);
+          },
+        });
+    }
+
+    // Remove old stores
+    for (const storeId of storesToRemove) {
+      requestCount++;
+      this.http
+        .delete(`${environment.apiUrl}/api/players/${playerId}/stores/${storeId}`)
+        .subscribe({
+          next: () => {
+            completedCount++;
+            if (completedCount === requestCount) {
+              this.finishPlayerUpdate();
+            }
+          },
+          error: (err) => {
+            console.error('Failed to remove store:', err);
+            this.errorMessage.set(err.error?.error || 'Failed to update stores');
+            this.isLoadingSettings.set(false);
+          },
+        });
+    }
+
+    if (requestCount === 0) {
+      this.finishPlayerUpdate();
+    }
+  }
+
+  private finishPlayerUpdate(): void {
+    this.playerForm.reset();
+    this.selectedPlayersStores.set([]);
+    this.editingPlayerId.set(null);
+    this.showCreatePlayerForm.set(false);
+    this.successMessage.set('Player updated successfully!');
+    setTimeout(() => this.successMessage.set(null), 3000);
+    this.loadPlayers();
+    this.isLoadingSettings.set(false);
+  }
+
+  toggleStoreSelection(event: Event, storeId: string): void {
+    const checkbox = event.target as HTMLInputElement;
+    const current = this.selectedPlayersStores();
+
+    if (checkbox.checked) {
+      this.selectedPlayersStores.set([...current, storeId]);
+    } else {
+      this.selectedPlayersStores.set(current.filter((id) => id !== storeId));
+    }
+  }
+
+  linkPlayerToStore(playerId: string, storeId: string): void {
+    if (!playerId || !storeId) return;
+
+    this.isLoadingSettings.set(true);
+
+    this.http
+      .post(`${environment.apiUrl}/api/players/${playerId}/stores`, {
+        storeIds: [storeId],
+      })
+      .subscribe({
+        next: () => {
+          this.selectedStoreForLinking.set('');
+          this.successMessage.set('Player linked to store successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadPlayers();
+          this.isLoadingSettings.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to link player to store:', err);
+          this.errorMessage.set(
+            err.error?.error || 'Failed to link player to store',
+          );
+          this.isLoadingSettings.set(false);
+        },
+      });
+  }
+
+  unlinkPlayerFromStore(playerId: string, storeId: string): void {
+    if (!confirm('Unlink this player from the store?')) return;
+
+    this.http
+      .delete(`${environment.apiUrl}/api/players/${playerId}/stores/${storeId}`)
+      .subscribe({
+        next: () => {
+          this.successMessage.set('Player unlinked from store!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadPlayers();
+        },
+        error: (err) => {
+          console.error('Failed to unlink player:', err);
+          this.errorMessage.set(err.error?.error || 'Failed to unlink player');
+        },
+      });
+  }
+
+  deletePlayer(playerId: string): void {
+    if (
+      !confirm(
+        'Are you sure you want to delete this player? This action cannot be undone.',
+      )
+    )
+      return;
+
+    this.http
+      .delete(`${environment.apiUrl}/api/players/${playerId}`)
+      .subscribe({
+        next: () => {
+          this.successMessage.set('Player deleted successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadPlayers();
+        },
+        error: (err) => {
+          console.error('Failed to delete player:', err);
+          this.errorMessage.set(err.error?.error || 'Failed to delete player');
+        },
+      });
+  }
+
   addStore(): void {
     if (!this.form.valid) {
       this.errorMessage.set('Please fill all required fields correctly');
@@ -1130,7 +1678,10 @@ export class StoreMaintenanceComponent implements OnInit {
     this.http
       .put<{
         data: Store;
-      }>(`${environment.apiUrl}/api/stores/${this.editingId()}`, this.editForm.value)
+      }>(
+        `${environment.apiUrl}/api/stores/${this.editingId()}`,
+        this.editForm.value,
+      )
       .subscribe({
         next: () => {
           this.successMessage.set('Store updated successfully!');
@@ -1204,7 +1755,9 @@ export class StoreMaintenanceComponent implements OnInit {
     this.http
       .get<{
         data: GamingStation[];
-      }>(`${environment.apiUrl}/api/gaming-sessions/stations/${this.selectedStoreForSettings()}`)
+      }>(
+        `${environment.apiUrl}/api/gaming-sessions/stations/${this.selectedStoreForSettings()}`,
+      )
       .subscribe({
         next: (response) => {
           this.stations.set(response.data);
@@ -1220,7 +1773,9 @@ export class StoreMaintenanceComponent implements OnInit {
     this.http
       .get<{
         data: DurationOption[];
-      }>(`${environment.apiUrl}/api/gaming-sessions/durations/${this.selectedStoreForSettings()}`)
+      }>(
+        `${environment.apiUrl}/api/gaming-sessions/durations/${this.selectedStoreForSettings()}`,
+      )
       .subscribe({
         next: (response) => {
           this.durations.set(response.data);
@@ -1236,13 +1791,29 @@ export class StoreMaintenanceComponent implements OnInit {
     this.http
       .get<{
         data: RateOption[];
-      }>(`${environment.apiUrl}/api/gaming-sessions/rates/${this.selectedStoreForSettings()}`)
+      }>(
+        `${environment.apiUrl}/api/gaming-sessions/rates/${this.selectedStoreForSettings()}`,
+      )
       .subscribe({
         next: (response) => {
           this.rates.set(response.data);
         },
         error: (err) => {
           console.error('Failed to load rates:', err);
+        },
+      });
+  }
+
+  private loadPlayers(): void {
+    this.http
+      .get<{ data: Player[] }>(`${environment.apiUrl}/api/players`)
+      .subscribe({
+        next: (response) => {
+          this.allPlayers.set(response.data);
+        },
+        error: (err) => {
+          console.error('Failed to load players:', err);
+          this.errorMessage.set('Failed to load players');
         },
       });
   }

@@ -166,3 +166,73 @@ export const gamingSessions = pgTable(
     index('idx_gaming_sessions_status').on(table.status),
   ],
 );
+
+export const events = pgTable(
+  'events',
+  {
+    id:             uuid('id').primaryKey().defaultRandom(),
+    storeId:        uuid('store_id').references(() => stores.id, { onDelete: 'cascade' }),
+    title:          varchar('title', { length: 255 }).notNull(),
+    game:           varchar('game', { length: 255 }),
+    eventType:      varchar('event_type', { length: 50 }).notNull().default('tournament'),
+    startDate:      tstz('start_date').notNull(),
+    endDate:        tstz('end_date'),
+    prizePool:      numeric('prize_pool', { precision: 10, scale: 2 }),
+    maxPlayers:     integer('max_players'),
+    currentPlayers: integer('current_players').notNull().default(0),
+    status:         varchar('status', { length: 20 }).notNull().default('upcoming'),
+    description:    varchar('description', { length: 1000 }),
+    createdAt:      tstz('created_at').notNull().defaultNow(),
+    updatedAt:      tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_events_status').on(table.status),
+    index('idx_events_store_id').on(table.storeId),
+  ],
+);
+
+export const eventResults = pgTable(
+  'event_results',
+  {
+    id:               uuid('id').primaryKey().defaultRandom(),
+    eventId:          uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+    playerUsername:   varchar('player_username', { length: 255 }).notNull(),
+    result:           varchar('result', { length: 20 }).notNull(),
+    placement:        integer('placement'),
+    score:            varchar('score', { length: 100 }),
+    pointsEarned:     integer('points_earned'),
+    kills:            integer('kills').notNull().default(0),
+    deaths:           integer('deaths').notNull().default(0),
+    assists:          integer('assists').notNull().default(0),
+    createdAt:        tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_event_results_event_id').on(table.eventId),
+  ],
+);
+
+export const promotions = pgTable(
+  'promotions',
+  {
+    id:              uuid('id').primaryKey().defaultRandom(),
+    storeId:         uuid('store_id').references(() => stores.id, { onDelete: 'cascade' }),
+    title:           varchar('title', { length: 255 }).notNull(),
+    type:            varchar('type', { length: 50 }).notNull().default('discount'),
+    promoCode:       varchar('promo_code', { length: 50 }).notNull().unique(),
+    discountValue:   numeric('discount_value', { precision: 5, scale: 2 }),
+    status:          varchar('status', { length: 20 }).notNull().default('scheduled'),
+    startDate:       tstz('start_date').notNull(),
+    endDate:         tstz('end_date').notNull(),
+    targetAudience:  varchar('target_audience', { length: 50 }).notNull().default('all_players'),
+    maxUsage:        integer('max_usage'),
+    currentUsage:    integer('current_usage').notNull().default(0),
+    description:     varchar('description', { length: 1000 }),
+    createdAt:       tstz('created_at').notNull().defaultNow(),
+    updatedAt:       tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_promotions_status').on(table.status),
+    index('idx_promotions_store_id').on(table.storeId),
+    index('idx_promotions_promo_code').on(table.promoCode),
+  ],
+);

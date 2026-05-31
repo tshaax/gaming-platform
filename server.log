@@ -1,0 +1,22 @@
+
+[2m> [22m[2mnx run[22m admin-app:serve:development
+
+[7m[1m[31m NX [39m[22m[27m  [31mPort 4200 is already in use. Use '--port' to specify a different port.[39m
+Pass --verbose to see the stacktrace.
+Task "admin-app:serve:development" is continuous but exited with code 1
+
+[2m[31m[39m[22m
+
+[7m[1m[31m NX [39m[22m[27m  [31mRunning target [1mserve[22m for project admin-app failed[39m
+
+[2mFailed tasks:[22m
+
+[2m-[22m admin-app:serve:development
+
+[2mHint: run the command with[22m --verbose [2mfor more details.[22m
+
+
+[7m[1m[33m NX [39m[22m[27m  [33mNx Cloud encountered some problems[39m
+
+This workspace is more than three days old and is not connected. Workspaces must be connected within 3 days of creation. Claim your workspace at https://cloud.nx.app. (code: 401)
+

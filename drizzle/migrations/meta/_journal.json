@@ -15,6 +15,20 @@
       "when": 1779051218020,
       "tag": "0001_silly_alex_wilder",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780240017951,
+      "tag": "0002_slow_gorgon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780245702703,
+      "tag": "0003_careless_chronomancer",
+      "breakpoints": true
     }
   ]
 }

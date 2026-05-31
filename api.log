@@ -3,222 +3,24 @@
 
 [2m[36m[39m[22m
 
-[2m> [22m[2mnx run[22m api:build:production
+[2m> [22m[2mnx run[22m api:build:production  [2m[local cache][22m
 
 
 [2m> [22m[2mnx run[22m api:serve:development
 
-[7m[1m[33m NX [39m[22m[27m  [33mNx Daemon is not enabled. Assets will not be updated when they are changed.[39m
 [ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/c4be8b00-f06f-4b18-843e-fbb37d075ddc
+[1m[31mDebugger listening on ws://localhost:9229/0b95aaf6-6720-42e7-bcef-39f0a341f7c7
 For help, see: https://nodejs.org/en/docs/inspector
 [39m[22m
-[1m[31mError: Cannot find module '@org/api/cashier'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\src\main.ts:6:53)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
+[1m[31m(node:33304) ExperimentalWarning: CommonJS module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\api.token.js is loading ES Module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@angular\core\fesm2022\core.mjs using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
 [39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/b669ab12-39db-491a-af92-b37eba48840d
-For help, see: https://nodejs.org/en/docs/inspector
+[ ready ] http://localhost:8080
+[1m[31m(node:33304) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 [39m[22m
-[1m[31mError: Cannot find module '../../../libs/api/cashier/src'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\src\main.ts:6:53)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/9dc786c6-e5cd-4c57-b242-68c20e03faa0
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[1m[31mError: Cannot find module '@org/api/cashier'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\src\main.ts:6:53)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/10f95340-a824-49bc-8a36-d99dbc719583
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[1m[31mError: Cannot find module '@org/drizzle-schema'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\lib\cashier.service.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\index.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\main.js:32:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\lib\cashier.service.js:36:29)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/daaafffd-5c32-4dea-be9b-4760fe17171c
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[1m[31mError: Cannot find module '../../../../../drizzle/schema'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\lib\cashier.service.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\index.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\libs\api\cashier\src\lib\cashier.service.ts:5:63)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/4adbe675-1f43-4aae-9cfd-3ddf8b2ec2ce
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[1m[31mError: Cannot find module '../../../../../drizzle/schema'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\lib\cashier.service.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\index.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\libs\api\cashier\src\lib\cashier.service.ts:5:63)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/a8e7b048-9806-4b11-ab54-e21fa05c16b3
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[1m[31mError: Cannot find module '../../../../../drizzle/schema'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\lib\cashier.service.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\cashier\src\index.js
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\libs\api\cashier\src\lib\cashier.service.ts:5:63)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/15495603-1113-451f-b904-0d757e83b2ea
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[ ready ] http://localhost:3333
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 4294967295, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mStarting inspector on localhost:9229 failed: address already in use
-[39m[22m
-[1m[31mError: listen EADDRINUSE: address already in use ::1:3333
-    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
-    at listenInCluster (node:net:1969:12)
-    at GetAddrInfoReqWrap.callback (node:net:2178:7)
-    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mStarting inspector on localhost:9229 failed: address already in use
-[39m[22m
-[ ready ] http://localhost:3333
-[4m[34mapps\api\src\main.ts:8:65[39m[24m - [31m[1merror[22m[39m [90mTS2307[39m: Cannot find module '@org/api/gaming-session' or its corresponding type declarations.
-[0m [90m  6 | [39m[36mimport[39m { [33mCashierService[39m[33m,[39m createCashierRouter } from [32m'@org/api/cashier'[39m[33m;[39m
- [90m  7 | [39m[36mimport[39m { [33mStoreService[39m[33m,[39m createStoreRouter } from [32m'@org/api/store'[39m[33m;[39m
-[31m[1m>[22m[39m[90m  8 | [39m[36mimport[39m { [33mGamingSessionService[39m[33m,[39m createGamingSessionRouter } from [32m'@org/api/gaming-session'[39m[33m;[39m
- [90m    | [39m                                                                [31m[1m^[22m[39m
- [90m  9 | [39m[36mimport[39m { [33mApiResponse[39m[33m,[39m [33mProduct[39m[33m,[39m [33mProductFilter[39m[33m,[39m [33mPaginatedResponse[39m } from [32m'@org/models'[39m[33m;[39m
- [90m 10 | [39m
- [90m 11 | [39m[36mconst[39m host [33m=[39m process[33m.[39menv[33m.[39m[33mHOST[39m [33m?[39m[33m?[39m [32m'localhost'[39m[33m;[39m[0m
-Found 1 error.
-[ [31mwatch[39m ] build finished with errors (see above), watching for changes...
-[4m[34mapps\api\src\main.ts:8:65[39m[24m - [31m[1merror[22m[39m [90mTS2307[39m: Cannot find module '@org/api/gaming-session' or its corresponding type declarations.
-[0m [90m  6 | [39m[36mimport[39m { [33mCashierService[39m[33m,[39m createCashierRouter } from [32m'@org/api/cashier'[39m[33m;[39m
- [90m  7 | [39m[36mimport[39m { [33mStoreService[39m[33m,[39m createStoreRouter } from [32m'@org/api/store'[39m[33m;[39m
-[31m[1m>[22m[39m[90m  8 | [39m[36mimport[39m { [33mGamingSessionService[39m[33m,[39m createGamingSessionRouter } from [32m'@org/api/gaming-session'[39m[33m;[39m
- [90m    | [39m                                                                [31m[1m^[22m[39m
- [90m  9 | [39m[36mimport[39m { [33mApiResponse[39m[33m,[39m [33mProduct[39m[33m,[39m [33mProductFilter[39m[33m,[39m [33mPaginatedResponse[39m } from [32m'@org/models'[39m[33m;[39m
- [90m 10 | [39m
- [90m 11 | [39m[36mconst[39m host [33m=[39m process[33m.[39menv[33m.[39m[33mHOST[39m [33m?[39m[33m?[39m [32m'localhost'[39m[33m;[39m[0m
-Found 1 error.
-[ [31mwatch[39m ] build finished with errors (see above), watching for changes...
-[1m[31mBuild failed, waiting for changes to restart...[39m[22m
-[1m[31mBuild failed, waiting for changes to restart...[39m[22m
-[4m[34mlibs\api\gaming-session\src\lib\gaming-session.service.ts:217:9[39m[24m - [31m[1merror[22m[39m [90mTS2353[39m: Object literal may only specify known properties, and 'updatedAt' does not exist in type '{ storeId?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}>; ratePerHour?: string | SQL<unknown> | PgColumn<...>; id?: string | ... 1 more ... | PgColumn<...>; createdAt?: SQL<...> | ... 1 more ... | Date; isActive?: boolean | ... 1 more ... | PgColumn<...>; label?: string | ... 1 ...'.
-[0m [90m 215 | [39m        ratePerHour[33m,[39m
- [90m 216 | [39m        label[33m,[39m
-[31m[1m>[22m[39m[90m 217 | [39m        updatedAt[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m
- [90m     | [39m        [31m[1m^[22m[39m
- [90m 218 | [39m      })
- [90m 219 | [39m      [33m.[39mwhere(eq(rateOptions[33m.[39mid[33m,[39m optionId))
- [90m 220 | [39m      [33m.[39mreturning()[33m;[39m[0m
-Found 1 error.
-[ [31mwatch[39m ] build finished with errors (see above), watching for changes...
-[1m[31mBuild failed, waiting for changes to restart...[39m[22m
-[ [32mwatch[39m ] build succeeded, watching for changes...
-[1m[31mDebugger listening on ws://localhost:9229/7a8ed080-c858-448c-9a10-3b5ca992df76
-For help, see: https://nodejs.org/en/docs/inspector
-[39m[22m
-[1m[31mError: Cannot find module '@org/api/gaming-session'
-Require stack:
-- C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\apps\api\src\main.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1249:15)
-    at Function.Module._resolveFilename (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\tmp\api\main-with-require-overrides.js:41:36)
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1075:27)
-    at Function.Module._load (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@nx\js\src\executors\node\node-with-require-overrides.js:18:31)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:219:24)
-    at Module.require (node:internal/modules/cjs/loader:1340:12)
-    at require (node:internal/modules/helpers:138:16)
-    at Object.<anonymous> (C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\src\main.ts:8:65)
-    at Module._compile (node:internal/modules/cjs/loader:1565:14)
-[39m[22m
-[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
