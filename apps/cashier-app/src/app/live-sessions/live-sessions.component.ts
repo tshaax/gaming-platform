@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { AuthService } from '@org/fe/auth';
 import { signal } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { CaptureResultsDialogComponent, CaptureResult } from './capture-results-dialog.component';
+import { TimeoutAlertService } from '../services/timeout-alert.service';
 
 interface GamingSession {
   id: string;
@@ -28,7 +30,7 @@ interface SessionWithDetails extends GamingSession {
 @Component({
   selector: 'app-live-sessions',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CaptureResultsDialogComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
       <!-- Header -->
@@ -76,13 +78,13 @@ interface SessionWithDetails extends GamingSession {
                   </div>
 
                   <!-- Time Info -->
-                  <div class="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <div [ngClass]="session.timeLeft === '0 min' ? 'border-red-400/50 bg-red-600/10' : 'border-white/10 bg-white/5'" class="p-3 rounded-lg border">
                     <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-2 text-slate-300">
+                      <div class="flex items-center gap-2" [ngClass]="session.timeLeft === '0 min' ? 'text-red-300' : 'text-slate-300'">
                         <span>⏱️</span>
                         <span class="text-sm">{{ session.timeLeft }} left</span>
                       </div>
-                      <span class="text-slate-400 text-xs">{{ session.durationMins }} min total</span>
+                      <span [ngClass]="session.timeLeft === '0 min' ? 'text-red-400' : 'text-slate-400'" class="text-xs">{{ session.durationMins }} min total</span>
                     </div>
                   </div>
 
@@ -129,6 +131,15 @@ interface SessionWithDetails extends GamingSession {
           </div>
         }
       </main>
+
+      <!-- Capture Results Dialog -->
+      @if (showCaptureDialog()) {
+        <app-capture-results-dialog
+          [gameName]="'PixelDust · tesr'"
+          (save)="onCaptureResultsSave($event)"
+          (closeDialog)="onCaptureResultsClose()"
+        ></app-capture-results-dialog>
+      }
     </div>
   `,
   styles: [],
@@ -140,10 +151,35 @@ export class LiveSessionsComponent implements OnInit {
   private apiUrl = environment.apiUrl;
 
   activeSessions = signal<SessionWithDetails[]>([]);
+  showCaptureDialog = signal(false);
+  private currentSessionId = signal<string | null>(null);
+  private stationMap = signal<Map<string, string>>(new Map());
+  private timeoutAlertService = inject(TimeoutAlertService);
 
   ngOnInit(): void {
+    this.loadStations();
     this.loadActiveSessions();
     setInterval(() => this.loadActiveSessions(), 5000);
+  }
+
+  private loadStations(): void {
+    const storeId = this.authService.storeId();
+    if (!storeId) {
+      return;
+    }
+
+    this.http.get<{ data: { id: string; name: string }[] }>(`${this.apiUrl}/api/gaming-sessions/stations/${storeId}`).subscribe({
+      next: (response) => {
+        const map = new Map<string, string>();
+        response.data?.forEach(station => {
+          map.set(station.id, station.name);
+        });
+        this.stationMap.set(map);
+      },
+      error: (err) => {
+        console.error('Failed to load gaming stations:', err);
+      },
+    });
   }
 
   private loadActiveSessions(): void {
@@ -170,26 +206,44 @@ export class LiveSessionsComponent implements OnInit {
     const remainingMinutes = Math.max(0, session.durationMins - elapsedMinutes);
 
     const cost = (parseFloat(session.ratePerHour) / 60) * session.durationMins;
+    const stationName = this.stationMap().get(session.stationId) || 'Unknown Station';
 
     return {
       ...session,
       cost,
       timeLeft: `${remainingMinutes} min`,
       playerName: 'CrystalWolf',
-      stationName: `Station ${Math.floor(Math.random() * 5) + 1}`,
+      stationName,
     };
   }
 
   endSession(sessionId: string): void {
-    this.http.put(`${this.apiUrl}/api/gaming-sessions/${sessionId}/end`, {}).subscribe({
+    this.currentSessionId.set(sessionId);
+    this.showCaptureDialog.set(true);
+  }
+
+  onCaptureResultsSave(result: CaptureResult): void {
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
+
+    this.http.put(`${this.apiUrl}/api/gaming-sessions/${sessionId}/end`, {
+      captureResult: result,
+    }).subscribe({
       next: () => {
-        console.log('Session ended');
+        console.log('Session ended with capture result');
+        this.showCaptureDialog.set(false);
+        this.currentSessionId.set(null);
         this.loadActiveSessions();
       },
       error: (err) => {
         console.error('Failed to end session:', err);
       },
     });
+  }
+
+  onCaptureResultsClose(): void {
+    this.showCaptureDialog.set(false);
+    this.currentSessionId.set(null);
   }
 
   cancelSession(sessionId: string): void {

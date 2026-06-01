@@ -44,5 +44,45 @@ export function createAnalyticsRouter(analyticsService: AnalyticsService): Route
     }
   });
 
+  router.get('/completed-sessions', async (req, res) => {
+    try {
+      const count = await analyticsService.getCompletedSessions();
+      res.json({ data: count });
+    } catch (error) {
+      console.error('Failed to get completed sessions:', error);
+      res.status(500).json({ error: 'Failed to get completed sessions' });
+    }
+  });
+
+  router.get('/total-hours', async (req, res) => {
+    try {
+      const hours = await analyticsService.getTotalHours();
+      res.json({ data: hours });
+    } catch (error) {
+      console.error('Failed to get total hours:', error);
+      res.status(500).json({ error: 'Failed to get total hours' });
+    }
+  });
+
+  router.get('/revenue-by-station', async (req, res) => {
+    try {
+      const data = await analyticsService.getRevenueByStation();
+      res.json({ data });
+    } catch (error) {
+      console.error('Failed to get revenue by station:', error);
+      res.status(500).json({ error: 'Failed to get revenue by station' });
+    }
+  });
+
+  router.get('/metrics', async (req, res) => {
+    try {
+      const metrics = await analyticsService.getReportMetrics();
+      res.json({ data: metrics });
+    } catch (error) {
+      console.error('Failed to get report metrics:', error);
+      res.status(500).json({ error: 'Failed to get report metrics' });
+    }
+  });
+
   return router;
 }

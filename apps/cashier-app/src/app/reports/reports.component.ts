@@ -158,17 +158,52 @@ export class ReportsComponent implements OnInit {
   }
 
   private loadAnalytics(): void {
-    const storeId = this.authService.storeId();
-    if (!storeId) {
-      return;
-    }
+    this.loadMetrics();
+    this.loadDailySessions();
+    this.loadRevenueByStation();
+  }
 
-    this.http.get<{ data: any }>(`${this.apiUrl}/api/analytics/store/${storeId}`).subscribe({
+  private loadMetrics(): void {
+    this.http.get<{ data: { totalRevenue: number; completedSessions: number; activeSessions: number; totalHours: number } }>(`${this.apiUrl}/api/analytics/metrics`).subscribe({
       next: (response) => {
-        console.log('Analytics loaded:', response.data);
+        const data = response.data;
+        this.metrics.set([
+          { label: 'Total Revenue', value: data.totalRevenue, icon: '$', color: 'cyan', format: 'currency' },
+          { label: 'Completed Sessions', value: data.completedSessions, icon: '✓', color: 'green', format: 'number' },
+          { label: 'Active Sessions', value: data.activeSessions, icon: '●', color: 'purple', format: 'number' },
+          { label: 'Total Hours', value: data.totalHours, icon: '⏱️', color: 'orange', format: 'number' },
+        ]);
       },
       error: (err) => {
-        console.error('Failed to load analytics:', err);
+        console.error('Failed to load metrics:', err);
+      },
+    });
+  }
+
+  private loadDailySessions(): void {
+    this.http.get<{ data: { day: string; count: number }[] }>(`${this.apiUrl}/api/analytics/weekly-activity`).subscribe({
+      next: (response) => {
+        const data = response.data;
+        this.dailySessions.set(data);
+        const counts = data.map(d => d.count);
+        this.maxDailyCount.set(Math.max(...counts, 5));
+      },
+      error: (err) => {
+        console.error('Failed to load daily sessions:', err);
+      },
+    });
+  }
+
+  private loadRevenueByStation(): void {
+    this.http.get<{ data: { station: string; revenue: number }[] }>(`${this.apiUrl}/api/analytics/revenue-by-station`).subscribe({
+      next: (response) => {
+        const data = response.data;
+        this.revenueByStation.set(data);
+        const revenues = data.map(s => s.revenue);
+        this.maxRevenue.set(Math.max(...revenues, 20));
+      },
+      error: (err) => {
+        console.error('Failed to load revenue by station:', err);
       },
     });
   }

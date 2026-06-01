@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { gamingSessions } from '@org/api/db';
+import { gamingSessions, gamingStations } from '@org/api/db';
 import { sql, eq } from 'drizzle-orm';
 
 interface WeeklyActivityData {
@@ -11,6 +11,18 @@ interface WeeklyActivityData {
 interface RevenueTrendData {
   date: string;
   revenue: number;
+}
+
+interface RevenueByStationData {
+  station: string;
+  revenue: number;
+}
+
+interface ReportMetricsData {
+  totalRevenue: number;
+  completedSessions: number;
+  activeSessions: number;
+  totalHours: number;
 }
 
 export class AnalyticsService {
@@ -103,5 +115,78 @@ export class AnalyticsService {
       .where(eq(gamingSessions.status, 'active'));
 
     return sessions.length;
+  }
+
+  async getCompletedSessions(): Promise<number> {
+    const query = sql`
+      SELECT COUNT(*) as count
+      FROM gaming_sessions
+      WHERE status = 'completed'
+    `;
+
+    const result = await this.db.execute(query);
+
+    if (Array.isArray(result) && result.length > 0) {
+      return parseInt(result[0].count, 10);
+    }
+
+    return 0;
+  }
+
+  async getTotalHours(): Promise<number> {
+    const query = sql`
+      SELECT
+        COALESCE(SUM(duration_mins::numeric / 60.0), 0) as total_hours
+      FROM gaming_sessions
+      WHERE status = 'completed'
+    `;
+
+    const result = await this.db.execute(query);
+
+    if (Array.isArray(result) && result.length > 0) {
+      return parseFloat(result[0].total_hours);
+    }
+
+    return 0;
+  }
+
+  async getRevenueByStation(): Promise<RevenueByStationData[]> {
+    const query = sql`
+      SELECT
+        gs.name as station,
+        COALESCE(SUM((s.duration_mins::numeric / 60.0) * s.rate_per_hour), 0) as revenue
+      FROM gaming_sessions s
+      JOIN gaming_stations gs ON s.station_id = gs.id
+      WHERE s.status = 'completed'
+      GROUP BY gs.id, gs.name
+      ORDER BY revenue DESC
+    `;
+
+    const result = await this.db.execute(query);
+
+    if (Array.isArray(result)) {
+      return result.map((row: any) => ({
+        station: row.station,
+        revenue: parseFloat(row.revenue),
+      }));
+    }
+
+    return [];
+  }
+
+  async getReportMetrics(): Promise<ReportMetricsData> {
+    const [totalRevenue, completedSessions, activeSessions, totalHours] = await Promise.all([
+      this.getTotalRevenue(),
+      this.getCompletedSessions(),
+      this.getActiveSessions(),
+      this.getTotalHours(),
+    ]);
+
+    return {
+      totalRevenue,
+      completedSessions,
+      activeSessions,
+      totalHours,
+    };
   }
 }
