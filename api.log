@@ -301,3 +301,82 @@ Role: GAMER
   Phone:    +1-555-0003
   Password: gamer123
 ────────────────────────────────────────────────────────────────────────────────
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mStarting inspector on localhost:9229 failed: address already in use
+[39m[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+Starting seed...
+[1m[31m(node:25048) ExperimentalWarning: CommonJS module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\api.token.js is loading ES Module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@angular\core\fesm2022\core.mjs using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:25048) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+Error: listen EADDRINUSE: address already in use ::1:8080
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.callback (node:net:2178:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+[1m[31mStarting inspector on localhost:9229 failed: address already in use
+[39m[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31m(node:39812) ExperimentalWarning: CommonJS module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\api.token.js is loading ES Module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@angular\core\fesm2022\core.mjs using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39812) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+[39m[22m
+Starting seed...
+[ ready ] http://localhost:8080
+✓ Test store already exists: d9718397-16e5-4735-ae1c-5ae9243be929
+[1m[31mStarting inspector on localhost:9229 failed: address already in use
+[39m[22m
+Starting seed...
+[1m[31m(node:39008) ExperimentalWarning: CommonJS module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\api.token.js is loading ES Module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@angular\core\fesm2022\core.mjs using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[39m[22m
+[1m[31m(node:39008) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+[39m[22m
+[1m[31mError: listen EADDRINUSE: address already in use ::1:8080
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.callback (node:net:2178:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
+[ [32mwatch[39m ] build succeeded, watching for changes...
+[1m[31mStarting inspector on localhost:9229 failed: address already in use
+[39m[22m
+Starting seed...
+[1m[31m(node:36784) ExperimentalWarning: CommonJS module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\apps\api\dist\libs\api\auth\src\lib\api.token.js is loading ES Module C:\Users\tshaa\Documents\PlayGround\repo\gaming-platform\node_modules\@angular\core\fesm2022\core.mjs using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36784) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+[39m[22m
+[1m[31mError: listen EADDRINUSE: address already in use ::1:8080
+    at Server.setupListenHandle [as _listen2] (node:net:1912:16)
+    at listenInCluster (node:net:1969:12)
+    at GetAddrInfoReqWrap.callback (node:net:2178:7)
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:132:8)
+[39m[22m
+[7m[1m[36m NX [39m[22m[27m [1mProcess exited with code 1, waiting for changes to restart...[22m
