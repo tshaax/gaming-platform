@@ -31,19 +31,23 @@ interface GamingStation {
   isActive: boolean;
 }
 
-interface DurationOption {
+interface PricingOption {
   id: string;
   storeId: string;
-  minutes: number;
-  isActive: boolean;
-}
-
-interface RateOption {
-  id: string;
-  storeId: string;
+  durationMins: number;
   ratePerHour: string;
   label?: string;
   isActive: boolean;
+}
+
+interface Game {
+  id: string;
+  storeId: string;
+  name: string;
+  thumbnail?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Player {
@@ -55,7 +59,7 @@ interface Player {
   updatedAt: string;
 }
 
-type TabType = 'stores' | 'stations' | 'pricing' | 'players';
+type TabType = 'stores' | 'stations' | 'pricing' | 'games' | 'players';
 
 @Component({
   selector: 'app-store-maintenance',
@@ -150,6 +154,15 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
           >
             <span>⏱️💰</span>
             <span>Pricing & Duration</span>
+          </button>
+          <button
+            (click)="activeTab.set('games')"
+            [class.border-b-2]="activeTab() === 'games'"
+            [class.border-cyan-400]="activeTab() === 'games'"
+            class="px-6 py-4 text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2 font-semibold"
+          >
+            <span>🎮</span>
+            <span>Games</span>
           </button>
           <button
             (click)="activeTab.set('players')"
@@ -357,7 +370,7 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                           selectedStoreForSettings.set(
                             $any($event.target).value
                           );
-                          loadStations();
+                          loadStations()
                         "
                         [value]="selectedStoreForSettings()"
                         class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
@@ -382,7 +395,8 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                           <div>
                             <label
                               class="block text-slate-300 text-sm font-semibold mb-2"
-                              >Station Name <span class="text-red-400">*</span></label
+                              >Station Name
+                              <span class="text-red-400">*</span></label
                             >
                             <input
                               type="text"
@@ -390,8 +404,13 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                               placeholder="Station 1"
                               class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                             />
-                            @if (stationForm.get('name')?.hasError('required') && stationForm.get('name')?.touched) {
-                              <p class="text-red-400 text-xs mt-1">Station name is required</p>
+                            @if (
+                              stationForm.get('name')?.hasError('required') &&
+                              stationForm.get('name')?.touched
+                            ) {
+                              <p class="text-red-400 text-xs mt-1">
+                                Station name is required
+                              </p>
                             }
                           </div>
                           <button
@@ -413,7 +432,9 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                           </h3>
                           <div class="space-y-3">
                             @if (stations().length === 0) {
-                              <p class="text-slate-400 text-sm">No stations for this store yet</p>
+                              <p class="text-slate-400 text-sm">
+                                No stations for this store yet
+                              </p>
                             } @else {
                               @for (station of stations(); track station.id) {
                                 <div
@@ -423,7 +444,9 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                                     <span class="text-white font-semibold">{{
                                       station.name
                                     }}</span>
-                                    <p class="text-slate-400 text-xs">ID: {{ station.id.slice(0, 8) }}...</p>
+                                    <p class="text-slate-400 text-xs">
+                                      ID: {{ station.id.slice(0, 8) }}...
+                                    </p>
                                   </div>
                                   <button
                                     (click)="deleteStation(station.id)"
@@ -465,8 +488,7 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                           selectedStoreForSettings.set(
                             $any($event.target).value
                           );
-                          loadDurations();
-                          loadRates();
+                          loadPricingOptions()
                         "
                         [value]="selectedStoreForSettings()"
                         class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
@@ -493,22 +515,31 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                             <div>
                               <label
                                 class="block text-slate-300 text-sm font-semibold mb-2"
-                                >Minutes <span class="text-red-400">*</span></label
+                                >Duration (minutes)
+                                <span class="text-red-400">*</span></label
                               >
                               <input
                                 type="number"
-                                formControlName="minutes"
+                                formControlName="durationMins"
                                 placeholder="30"
                                 class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                               />
-                              @if (pricingForm.get('minutes')?.hasError('required') && pricingForm.get('minutes')?.touched) {
-                                <p class="text-red-400 text-xs mt-1">Duration is required</p>
+                              @if (
+                                pricingForm
+                                  .get('durationMins')
+                                  ?.hasError('required') &&
+                                pricingForm.get('durationMins')?.touched
+                              ) {
+                                <p class="text-red-400 text-xs mt-1">
+                                  Duration is required
+                                </p>
                               }
                             </div>
                             <div>
                               <label
                                 class="block text-slate-300 text-sm font-semibold mb-2"
-                                >Rate/hr ($) <span class="text-red-400">*</span></label
+                                >Rate per minute(s)
+                                <span class="text-red-400">*</span></label
                               >
                               <input
                                 type="number"
@@ -517,8 +548,15 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                                 step="0.01"
                                 class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                               />
-                              @if (pricingForm.get('ratePerHour')?.hasError('required') && pricingForm.get('ratePerHour')?.touched) {
-                                <p class="text-red-400 text-xs mt-1">Rate is required</p>
+                              @if (
+                                pricingForm
+                                  .get('ratePerHour')
+                                  ?.hasError('required') &&
+                                pricingForm.get('ratePerHour')?.touched
+                              ) {
+                                <p class="text-red-400 text-xs mt-1">
+                                  Rate is required
+                                </p>
                               }
                             </div>
                             <div>
@@ -541,73 +579,218 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                             "
                             class="w-full px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
                           >
-                            {{ isLoadingSettings() ? 'Saving...' : 'Save Duration & Rate' }}
+                            {{
+                              isLoadingSettings()
+                                ? 'Saving...'
+                                : 'Add Pricing Package'
+                            }}
                           </button>
                         </form>
 
-                        <div class="grid grid-cols-2 gap-8">
-                          <!-- Duration Options Display -->
-                          <div>
-                            <h4 class="text-white font-bold mb-3">
-                              Available Durations
-                            </h4>
-                            <div class="space-y-2">
-                              @if (durations().length === 0) {
-                                <p class="text-slate-400 text-sm">No durations yet</p>
-                              } @else {
-                                @for (
-                                  duration of durations();
-                                  track duration.id
-                                ) {
-                                  <div
-                                    class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
-                                  >
-                                    <span class="text-white font-semibold"
-                                      >{{ duration.minutes }} min</span
+                        <div>
+                          <!-- Pricing Options Display -->
+                          <h4 class="text-white font-bold mb-3">
+                            Available Pricing Packages
+                          </h4>
+                          <div class="space-y-2">
+                            @if (pricingOptions().length === 0) {
+                              <p class="text-slate-400 text-sm">
+                                No pricing packages yet
+                              </p>
+                            } @else {
+                              @for (
+                                pricing of pricingOptions();
+                                track pricing.id
+                              ) {
+                                <div
+                                  class="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg hover:border-cyan-400/50 transition-colors"
+                                >
+                                  <div class="flex-1">
+                                    <span
+                                      class="text-white font-semibold text-lg"
                                     >
-                                    <button
-                                      (click)="deleteDuration(duration.id)"
-                                      class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
-                                    >
-                                      Delete
-                                    </button>
+                                      {{
+                                        pricing.durationMins +
+                                          ' minutes → ' +
+                                          pricing.ratePerHour
+                                      }}
+                                    </span>
+                                    @if (pricing.label) {
+                                      <p class="text-slate-400 text-sm">
+                                        Label: {{ pricing.label }}
+                                      </p>
+                                    }
                                   </div>
-                                }
+                                  <button
+                                    (click)="deletePricingOption(pricing.id)"
+                                    class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors whitespace-nowrap ml-4"
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
                               }
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Games Tab -->
+          @if (activeTab() === 'games') {
+            <div class="w-full max-w-4xl">
+              <div
+                class="bg-gradient-to-br from-blue-600/10 to-slate-600/10 backdrop-blur-md rounded-xl p-6 border border-white/10"
+              >
+                <div class="mb-6">
+                  <h2 class="text-xl font-bold text-white mb-4">
+                    Manage Games
+                  </h2>
+                  <div class="space-y-4">
+                    <div>
+                      <label
+                        class="block text-slate-300 text-sm font-semibold mb-2"
+                        >Select Store</label
+                      >
+                      <select
+                        (change)="
+                          selectedStoreForSettings.set(
+                            $any($event.target).value
+                          );
+                          loadGames();
+                        "
+                        [value]="selectedStoreForSettings()"
+                        class="w-full px-4 py-2 bg-black border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400"
+                      >
+                        <option value="">Choose a store...</option>
+                        @for (store of stores(); track store.id) {
+                          <option [value]="store.id">{{ store.name }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    @if (selectedStoreForSettings()) {
+                      <div class="pt-4 border-t border-white/10">
+                        <h3 class="text-white font-bold mb-4">
+                          {{ editingGameId() ? 'Edit Game' : 'Add New Game' }}
+                        </h3>
+                        <form
+                          [formGroup]="gameForm"
+                          (ngSubmit)="editingGameId() ? updateGame(editingGameId()!) : addGame()"
+                          class="space-y-4 mb-8 p-4 bg-white/5 rounded-lg border border-white/10"
+                        >
+                          <div class="grid grid-cols-2 gap-4">
+                            <div>
+                              <label
+                                class="block text-slate-300 text-sm font-semibold mb-2"
+                                >Game Name <span class="text-red-400">*</span></label
+                              >
+                              <input
+                                type="text"
+                                formControlName="name"
+                                placeholder="e.g., Counter Strike 2"
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                              />
+                              @if (gameForm.get('name')?.hasError('required') && gameForm.get('name')?.touched) {
+                                <p class="text-red-400 text-xs mt-1">Game name is required</p>
+                              }
+                            </div>
+                            <div>
+                              <label
+                                class="block text-slate-300 text-sm font-semibold mb-2"
+                                >Thumbnail (JPG) <span class="text-red-400">*</span></label
+                              >
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png"
+                                (change)="onGameImageSelect($event)"
+                                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                              />
+                              <p class="text-slate-400 text-xs mt-1">Max 500KB, will be compressed to 500x300px</p>
                             </div>
                           </div>
 
-                          <!-- Rate Options Display -->
-                          <div>
-                            <h4 class="text-white font-bold mb-3">
-                              Available Rates
-                            </h4>
-                            <div class="space-y-2">
-                              @if (rates().length === 0) {
-                                <p class="text-slate-400 text-sm">No rates yet</p>
-                              } @else {
-                                @for (rate of rates(); track rate.id) {
-                                  <div
-                                    class="flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg"
-                                  >
-                                    <span class="text-white font-semibold">
-                                      $ {{ rate.ratePerHour }}/hr
-                                      @if (rate.label) {
-                                        <span class="text-slate-400 text-sm"
-                                          >({{ rate.label }})</span
-                                        >
-                                      }
+                          @if (gamePreviewUrl()) {
+                            <div class="flex justify-center">
+                              <div class="rounded-lg overflow-hidden border border-cyan-400/50 bg-black/30">
+                                <img
+                                  [src]="gamePreviewUrl()"
+                                  alt="Game thumbnail preview"
+                                  class="w-60 h-36 object-cover"
+                                />
+                              </div>
+                            </div>
+                          }
+
+                          <div class="flex gap-2">
+                            <button
+                              type="submit"
+                              [disabled]="!gameForm.valid || isLoadingSettings()"
+                              class="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
+                            >
+                              {{ isLoadingSettings() ? 'Saving...' : (editingGameId() ? 'Update Game' : 'Add Game') }}
+                            </button>
+                            @if (editingGameId()) {
+                              <button
+                                type="button"
+                                (click)="cancelEditGame()"
+                                class="px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            }
+                          </div>
+                        </form>
+
+                        <div>
+                          <h4 class="text-white font-bold mb-3">
+                            Available Games
+                          </h4>
+                          <div class="grid grid-cols-1 gap-3">
+                            @if (games().length === 0) {
+                              <p class="text-slate-400 text-sm">No games configured for this store yet</p>
+                            } @else {
+                              @for (game of games(); track game.id) {
+                                <div
+                                  class="flex items-center gap-4 p-4 bg-white/5 border border-white/10 rounded-lg hover:border-cyan-400/50 transition-colors"
+                                >
+                                  @if (game.thumbnail) {
+                                    <img
+                                      [src]="game.thumbnail"
+                                      alt="{{ game.name }}"
+                                      class="w-20 h-12 object-cover rounded"
+                                    />
+                                  } @else {
+                                    <div class="w-20 h-12 bg-slate-600 rounded flex items-center justify-center text-slate-400">
+                                      No image
+                                    </div>
+                                  }
+                                  <div class="flex-1">
+                                    <span class="text-white font-semibold text-lg">
+                                      {{ game.name }}
                                     </span>
+                                  </div>
+                                  <div class="flex gap-2">
                                     <button
-                                      (click)="deleteRate(rate.id)"
-                                      class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors"
+                                      (click)="editGame(game)"
+                                      class="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 rounded text-blue-400 text-sm transition-colors whitespace-nowrap"
+                                    >
+                                      Edit
+                                    </button>
+                                    <button
+                                      (click)="deleteGame(game.id)"
+                                      class="px-3 py-1 bg-red-600/20 hover:bg-red-600/40 border border-red-500/50 rounded text-red-400 text-sm transition-colors whitespace-nowrap"
                                     >
                                       Delete
                                     </button>
                                   </div>
-                                }
+                                </div>
                               }
-                            </div>
+                            }
                           </div>
                         </div>
                       </div>
@@ -629,7 +812,14 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                     <h2 class="text-xl font-bold text-white">Manage Players</h2>
                     <p class="text-slate-400 text-sm">
                       @if (playerFilterText()) {
-                        Showing {{ allPlayers().filter(p => (p.email || p.cellphone || p.id).toLowerCase().includes(playerFilterText().toLowerCase())).length }}
+                        Showing
+                        {{
+                          allPlayers().filter((p) =>
+                            (p.email || p.cellphone || p.id)
+                              .toLowerCase()
+                              .includes(playerFilterText().toLowerCase())
+                          ).length
+                        }}
                       } @else {
                         {{ allPlayers().length }}
                       }
@@ -668,11 +858,16 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                 @if (allPlayers().length === 0) {
                   <p class="text-slate-400 text-center py-12">No players yet</p>
                 } @else {
-                  @let filteredPlayers = allPlayers().filter(p =>
-                    (p.email || p.cellphone || p.id).toLowerCase().includes(playerFilterText().toLowerCase())
-                  );
+                  @let filteredPlayers =
+                    allPlayers().filter((p) =>
+                      (p.email || p.cellphone || p.id)
+                        .toLowerCase()
+                        .includes(playerFilterText().toLowerCase())
+                    );
                   @if (filteredPlayers.length === 0) {
-                    <p class="text-slate-400 text-center py-12">No players match your filter</p>
+                    <p class="text-slate-400 text-center py-12">
+                      No players match your filter
+                    </p>
                   } @else {
                     <div class="grid grid-cols-3 gap-4">
                       @for (player of filteredPlayers; track player.id) {
@@ -680,7 +875,9 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                           class="bg-gradient-to-br from-blue-500/10 to-slate-600/10 border border-white/10 rounded-lg p-5 hover:border-cyan-400/50 transition-all"
                         >
                           <!-- Header with Name and Action Icons -->
-                          <div class="flex items-start justify-between gap-2 mb-3">
+                          <div
+                            class="flex items-start justify-between gap-2 mb-3"
+                          >
                             <div class="flex-1 min-w-0">
                               <h4 class="text-white font-bold text-lg truncate">
                                 {{
@@ -700,7 +897,18 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                             <!-- Action Icons -->
                             <div class="flex gap-1 flex-shrink-0">
                               <button
-                                (click)="editingPlayerId.set(player.id); playerForm.patchValue({email: player.email || '', cellphone: player.cellphone || '', password: ''}); selectedPlayersStores.set(player.stores.map(s => s.id)); showCreatePlayerForm.set(true)"
+                                (click)="
+                                  editingPlayerId.set(player.id);
+                                  playerForm.patchValue({
+                                    email: player.email || '',
+                                    cellphone: player.cellphone || '',
+                                    password: '',
+                                  });
+                                  selectedPlayersStores.set(
+                                    player.stores.map((s) => s.id)
+                                  );
+                                  showCreatePlayerForm.set(true)
+                                "
                                 title="Edit player"
                                 class="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded transition-colors text-lg"
                               >
@@ -716,77 +924,82 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                             </div>
                           </div>
 
-                        <div class="mb-4 pb-3 border-b border-white/10">
-                          <p class="text-slate-400 text-xs font-semibold mb-2">
-                            LINKED STORES ({{ player.stores.length }})
-                          </p>
-                          @if (player.stores.length === 0) {
-                            <p class="text-slate-500 text-xs italic">
-                              Not linked to any stores
+                          <div class="mb-4 pb-3 border-b border-white/10">
+                            <p
+                              class="text-slate-400 text-xs font-semibold mb-2"
+                            >
+                              LINKED STORES ({{ player.stores.length }})
                             </p>
-                          } @else {
-                            <div class="space-y-1">
-                              @for (store of player.stores; track store.id) {
-                                <div
-                                  class="flex items-center justify-between bg-cyan-500/20 border border-cyan-400/50 rounded px-2 py-1"
-                                >
-                                  <span
-                                    class="text-cyan-300 text-xs truncate"
-                                    >{{ store.name }}</span
+                            @if (player.stores.length === 0) {
+                              <p class="text-slate-500 text-xs italic">
+                                Not linked to any stores
+                              </p>
+                            } @else {
+                              <div class="space-y-1">
+                                @for (store of player.stores; track store.id) {
+                                  <div
+                                    class="flex items-center justify-between bg-cyan-500/20 border border-cyan-400/50 rounded px-2 py-1"
                                   >
-                                  <button
-                                    (click)="
-                                      unlinkPlayerFromStore(player.id, store.id)
-                                    "
-                                    class="text-cyan-400 hover:text-red-400 text-xs cursor-pointer flex-shrink-0 ml-1"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              }
-                            </div>
-                          }
-                        </div>
-
-                        <!-- Link to Store -->
-                        <div class="space-y-2 mb-3">
-                          <select
-                            (change)="
-                              selectedStoreForLinking.set(
-                                $any($event.target).value
-                              )
-                            "
-                            [value]="selectedStoreForLinking()"
-                            class="w-full px-3 py-2 bg-blue-900 border border-white/20 rounded text-white text-xs focus:outline-none focus:border-cyan-400"
-                          >
-                            <option value="">Link to store...</option>
-                            @for (store of stores(); track store.id) {
-                              @if (
-                                !player.stores.some((s) => s.id === store.id)
-                              ) {
-                                <option [value]="store.id">
-                                  {{ store.name }}
-                                </option>
-                              }
+                                    <span
+                                      class="text-cyan-300 text-xs truncate"
+                                      >{{ store.name }}</span
+                                    >
+                                    <button
+                                      (click)="
+                                        unlinkPlayerFromStore(
+                                          player.id,
+                                          store.id
+                                        )
+                                      "
+                                      class="text-cyan-400 hover:text-red-400 text-xs cursor-pointer flex-shrink-0 ml-1"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                }
+                              </div>
                             }
-                          </select>
-                          <button
-                            (click)="
-                              linkPlayerToStore(
-                                player.id,
-                                selectedStoreForLinking()
-                              )
-                            "
-                            [disabled]="
-                              !selectedStoreForLinking() || isLoadingSettings()
-                            "
-                            class="w-full px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white text-xs rounded transition-colors font-semibold"
-                          >
-                            Link Store
-                          </button>
-                        </div>
+                          </div>
 
-                      </div>
+                          <!-- Link to Store -->
+                          <div class="space-y-2 mb-3">
+                            <select
+                              (change)="
+                                selectedStoreForLinking.set(
+                                  $any($event.target).value
+                                )
+                              "
+                              [value]="selectedStoreForLinking()"
+                              class="w-full px-3 py-2 bg-blue-900 border border-white/20 rounded text-white text-xs focus:outline-none focus:border-cyan-400"
+                            >
+                              <option value="">Link to store...</option>
+                              @for (store of stores(); track store.id) {
+                                @if (
+                                  !player.stores.some((s) => s.id === store.id)
+                                ) {
+                                  <option [value]="store.id">
+                                    {{ store.name }}
+                                  </option>
+                                }
+                              }
+                            </select>
+                            <button
+                              (click)="
+                                linkPlayerToStore(
+                                  player.id,
+                                  selectedStoreForLinking()
+                                )
+                              "
+                              [disabled]="
+                                !selectedStoreForLinking() ||
+                                isLoadingSettings()
+                              "
+                              class="w-full px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white text-xs rounded transition-colors font-semibold"
+                            >
+                              Link Store
+                            </button>
+                          </div>
+                        </div>
                       }
                     </div>
                   }
@@ -919,7 +1132,7 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                   showCreatePlayerForm.set(false);
                   playerForm.reset();
                   selectedPlayersStores.set([]);
-                  editingPlayerId.set(null);
+                  editingPlayerId.set(null)
                 "
                 class="text-slate-400 hover:text-white text-2xl"
               >
@@ -1010,7 +1223,13 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'players';
                   class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white font-semibold rounded-lg transition-colors"
                 >
                   {{
-                    isLoadingSettings() ? (editingPlayerId() ? 'Updating...' : 'Creating...') : (editingPlayerId() ? 'Update Player' : 'Create Player')
+                    isLoadingSettings()
+                      ? editingPlayerId()
+                        ? 'Updating...'
+                        : 'Creating...'
+                      : editingPlayerId()
+                        ? 'Update Player'
+                        : 'Create Player'
                   }}
                 </button>
                 <button
@@ -1139,12 +1358,13 @@ export class StoreMaintenanceComponent implements OnInit {
   editForm: FormGroup;
   stationForm: FormGroup;
   pricingForm: FormGroup;
+  gameForm: FormGroup;
   playerForm: FormGroup;
 
   stores = signal<Store[]>([]);
   stations = signal<GamingStation[]>([]);
-  durations = signal<DurationOption[]>([]);
-  rates = signal<RateOption[]>([]);
+  pricingOptions = signal<PricingOption[]>([]);
+  games = signal<Game[]>([]);
   allPlayers = signal<Player[]>([]);
 
   isLoading = signal(false);
@@ -1161,6 +1381,8 @@ export class StoreMaintenanceComponent implements OnInit {
   selectedStoreForLinking = signal<string>('');
   playerFilterText = signal<string>('');
   editingPlayerId = signal<string | null>(null);
+  editingGameId = signal<string | null>(null);
+  gamePreviewUrl = signal<string | null>(null);
 
   filterText = signal('');
   viewMode = signal<'cards' | 'table'>('cards');
@@ -1222,9 +1444,14 @@ export class StoreMaintenanceComponent implements OnInit {
     });
 
     this.pricingForm = this.fb.group({
-      minutes: ['', [Validators.required, Validators.min(1)]],
+      durationMins: ['', [Validators.required, Validators.min(1)]],
       ratePerHour: ['', [Validators.required, Validators.min(0)]],
       label: [''],
+    });
+
+    this.gameForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      thumbnail: [''],
     });
 
     this.playerForm = this.fb.group({
@@ -1286,98 +1513,217 @@ export class StoreMaintenanceComponent implements OnInit {
     if (!this.pricingForm.valid || !this.selectedStoreForSettings()) return;
     this.isLoadingSettings.set(true);
 
-    const { minutes, ratePerHour, label } = this.pricingForm.value;
+    const { durationMins, ratePerHour, label } = this.pricingForm.value;
     const storeId = this.selectedStoreForSettings();
 
-    // Create both duration and rate in parallel
-    let completedCount = 0;
-    let hasError = false;
-
-    // Add duration
     this.http
-      .post(`${environment.apiUrl}/api/gaming-sessions/durations`, {
+      .post(`${environment.apiUrl}/api/gaming-sessions/pricing`, {
         storeId,
-        minutes: parseInt(minutes),
-      })
-      .subscribe({
-        next: () => {
-          completedCount++;
-          if (completedCount === 2 && !hasError) {
-            this.finishPricingAdd();
-          }
-        },
-        error: (err) => {
-          hasError = true;
-          console.error('Failed to add duration:', err);
-          this.errorMessage.set('Failed to add duration');
-          this.isLoadingSettings.set(false);
-        },
-      });
-
-    // Add rate
-    this.http
-      .post(`${environment.apiUrl}/api/gaming-sessions/rates`, {
-        storeId,
+        durationMins: parseInt(durationMins),
         ratePerHour: parseFloat(ratePerHour).toString(),
         label: label || undefined,
       })
       .subscribe({
         next: () => {
-          completedCount++;
-          if (completedCount === 2 && !hasError) {
-            this.finishPricingAdd();
-          }
+          this.pricingForm.reset();
+          this.successMessage.set('Pricing package added successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadPricingOptions();
+          this.isLoadingSettings.set(false);
         },
         error: (err) => {
-          hasError = true;
-          console.error('Failed to add rate:', err);
-          this.errorMessage.set('Failed to add rate');
+          console.error('Failed to add pricing package:', err);
+          this.errorMessage.set('Failed to add pricing package');
           this.isLoadingSettings.set(false);
         },
       });
   }
 
-  private finishPricingAdd(): void {
-    this.pricingForm.reset();
-    this.successMessage.set('Duration and Rate added successfully!');
-    setTimeout(() => this.successMessage.set(null), 3000);
-    this.loadDurations();
-    this.loadRates();
-    this.isLoadingSettings.set(false);
-  }
-
-  deleteDuration(durationId: string): void {
-    if (!confirm('Delete this duration?')) return;
+  deletePricingOption(pricingId: string): void {
+    if (!confirm('Delete this pricing package? This cannot be undone.')) return;
     this.http
-      .delete(
-        `${environment.apiUrl}/api/gaming-sessions/durations/${durationId}`,
-      )
+      .delete(`${environment.apiUrl}/api/gaming-sessions/pricing/${pricingId}`)
       .subscribe({
         next: () => {
-          this.successMessage.set('Duration deleted successfully!');
+          this.successMessage.set('Pricing package deleted successfully!');
           setTimeout(() => this.successMessage.set(null), 3000);
-          this.loadDurations();
+          this.loadPricingOptions();
         },
         error: (err) => {
-          console.error('Failed to delete duration:', err);
-          this.errorMessage.set('Failed to delete duration');
+          console.error('Failed to delete pricing package:', err);
+          this.errorMessage.set('Failed to delete pricing package');
         },
       });
   }
 
-  deleteRate(rateId: string): void {
-    if (!confirm('Delete this rate?')) return;
+  loadGames(): void {
+    if (!this.selectedStoreForSettings()) return;
     this.http
-      .delete(`${environment.apiUrl}/api/gaming-sessions/rates/${rateId}`)
+      .get<any>(`${environment.apiUrl}/api/gaming-sessions/games/${this.selectedStoreForSettings()}`)
       .subscribe({
-        next: () => {
-          this.successMessage.set('Rate deleted successfully!');
-          setTimeout(() => this.successMessage.set(null), 3000);
-          this.loadRates();
+        next: (response) => {
+          this.games.set(response.data || []);
         },
         error: (err) => {
-          console.error('Failed to delete rate:', err);
-          this.errorMessage.set('Failed to delete rate');
+          console.error('Failed to load games:', err);
+          this.errorMessage.set('Failed to load games');
+        },
+      });
+  }
+
+  private async compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxWidth = 500;
+          const maxHeight = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          resolve(compressed);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  }
+
+  async onGameImageSelect(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > 500 * 1024) {
+      this.errorMessage.set('Image must be smaller than 500KB');
+      return;
+    }
+
+    try {
+      const compressed = await this.compressImage(file);
+      this.gameForm.patchValue({ thumbnail: compressed });
+      this.gamePreviewUrl.set(compressed);
+      this.errorMessage.set(null);
+    } catch (err) {
+      console.error('Failed to compress image:', err);
+      this.errorMessage.set('Failed to process image');
+    }
+  }
+
+  addGame(): void {
+    if (!this.gameForm.valid || !this.selectedStoreForSettings()) {
+      this.errorMessage.set('Please fill all required fields');
+      return;
+    }
+
+    this.isLoadingSettings.set(true);
+    const { name, thumbnail } = this.gameForm.value;
+    const storeId = this.selectedStoreForSettings();
+
+    this.http
+      .post(`${environment.apiUrl}/api/gaming-sessions/games`, {
+        storeId,
+        name,
+        thumbnail,
+      })
+      .subscribe({
+        next: () => {
+          this.gameForm.reset();
+          this.gamePreviewUrl.set(null);
+          this.successMessage.set('Game added successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadGames();
+          this.isLoadingSettings.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to add game:', err);
+          this.errorMessage.set('Failed to add game');
+          this.isLoadingSettings.set(false);
+        },
+      });
+  }
+
+  updateGame(gameId: string): void {
+    if (!this.gameForm.valid) {
+      this.errorMessage.set('Please fill all required fields');
+      return;
+    }
+
+    this.isLoadingSettings.set(true);
+    const { name, thumbnail } = this.gameForm.value;
+
+    this.http
+      .put(`${environment.apiUrl}/api/gaming-sessions/games/${gameId}`, {
+        name,
+        thumbnail,
+      })
+      .subscribe({
+        next: () => {
+          this.gameForm.reset();
+          this.gamePreviewUrl.set(null);
+          this.editingGameId.set(null);
+          this.successMessage.set('Game updated successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadGames();
+          this.isLoadingSettings.set(false);
+        },
+        error: (err) => {
+          console.error('Failed to update game:', err);
+          this.errorMessage.set('Failed to update game');
+          this.isLoadingSettings.set(false);
+        },
+      });
+  }
+
+  editGame(game: Game): void {
+    this.editingGameId.set(game.id);
+    this.gameForm.patchValue({
+      name: game.name,
+      thumbnail: game.thumbnail,
+    });
+    this.gamePreviewUrl.set(game.thumbnail || null);
+  }
+
+  cancelEditGame(): void {
+    this.editingGameId.set(null);
+    this.gameForm.reset();
+    this.gamePreviewUrl.set(null);
+  }
+
+  deleteGame(gameId: string): void {
+    if (!confirm('Delete this game? This cannot be undone.')) return;
+    this.http
+      .delete(`${environment.apiUrl}/api/gaming-sessions/games/${gameId}`)
+      .subscribe({
+        next: () => {
+          this.successMessage.set('Game deleted successfully!');
+          setTimeout(() => this.successMessage.set(null), 3000);
+          this.loadGames();
+        },
+        error: (err) => {
+          console.error('Failed to delete game:', err);
+          this.errorMessage.set('Failed to delete game');
         },
       });
   }
@@ -1441,9 +1787,10 @@ export class StoreMaintenanceComponent implements OnInit {
     this.isLoadingSettings.set(true);
     this.errorMessage.set(null);
 
-    const currentStores = this.allPlayers()
-      .find((p) => p.id === playerId)
-      ?.stores.map((s) => s.id) || [];
+    const currentStores =
+      this.allPlayers()
+        .find((p) => p.id === playerId)
+        ?.stores.map((s) => s.id) || [];
     const storesToAdd = this.selectedPlayersStores().filter(
       (id) => !currentStores.includes(id),
     );
@@ -1470,7 +1817,9 @@ export class StoreMaintenanceComponent implements OnInit {
           },
           error: (err) => {
             console.error('Failed to add stores:', err);
-            this.errorMessage.set(err.error?.error || 'Failed to update stores');
+            this.errorMessage.set(
+              err.error?.error || 'Failed to update stores',
+            );
             this.isLoadingSettings.set(false);
           },
         });
@@ -1480,7 +1829,9 @@ export class StoreMaintenanceComponent implements OnInit {
     for (const storeId of storesToRemove) {
       requestCount++;
       this.http
-        .delete(`${environment.apiUrl}/api/players/${playerId}/stores/${storeId}`)
+        .delete(
+          `${environment.apiUrl}/api/players/${playerId}/stores/${storeId}`,
+        )
         .subscribe({
           next: () => {
             completedCount++;
@@ -1490,7 +1841,9 @@ export class StoreMaintenanceComponent implements OnInit {
           },
           error: (err) => {
             console.error('Failed to remove store:', err);
-            this.errorMessage.set(err.error?.error || 'Failed to update stores');
+            this.errorMessage.set(
+              err.error?.error || 'Failed to update stores',
+            );
             this.isLoadingSettings.set(false);
           },
         });
@@ -1742,46 +2095,24 @@ export class StoreMaintenanceComponent implements OnInit {
       });
   }
 
-  loadDurations(): void {
+  loadPricingOptions(): void {
     if (!this.selectedStoreForSettings()) {
-      this.durations.set([]);
+      this.pricingOptions.set([]);
       return;
     }
     this.http
       .get<{
-        data: DurationOption[];
+        data: PricingOption[];
       }>(
-        `${environment.apiUrl}/api/gaming-sessions/durations/${this.selectedStoreForSettings()}`,
+        `${environment.apiUrl}/api/gaming-sessions/pricing/${this.selectedStoreForSettings()}`,
       )
       .subscribe({
         next: (response) => {
-          this.durations.set(response.data || []);
+          this.pricingOptions.set(response.data || []);
         },
         error: (err) => {
-          console.error('Failed to load durations:', err);
-          this.durations.set([]);
-        },
-      });
-  }
-
-  loadRates(): void {
-    if (!this.selectedStoreForSettings()) {
-      this.rates.set([]);
-      return;
-    }
-    this.http
-      .get<{
-        data: RateOption[];
-      }>(
-        `${environment.apiUrl}/api/gaming-sessions/rates/${this.selectedStoreForSettings()}`,
-      )
-      .subscribe({
-        next: (response) => {
-          this.rates.set(response.data || []);
-        },
-        error: (err) => {
-          console.error('Failed to load rates:', err);
-          this.rates.set([]);
+          console.error('Failed to load pricing options:', err);
+          this.pricingOptions.set([]);
         },
       });
   }

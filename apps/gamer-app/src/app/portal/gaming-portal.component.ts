@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -15,12 +15,21 @@ interface ActiveSession {
   startedAt: Date;
   durationMins: number;
   ratePerHour: string;
+  timeLeft?: string;
 }
 
 interface Player {
   id: string;
   email?: string;
   cellphone?: string;
+}
+
+interface Game {
+  id: string;
+  storeId: string;
+  name: string;
+  thumbnail?: string;
+  isActive: boolean;
 }
 
 @Component({
@@ -63,12 +72,12 @@ interface Player {
                 <p class="text-white text-lg font-semibold">{{ session()?.startedAt | date: 'short' }}</p>
               </div>
               <div>
-                <p class="text-cyan-200 text-sm mb-1">Duration</p>
-                <p class="text-white text-lg font-semibold">{{ session()?.durationMins }} min</p>
+                <p class="text-cyan-200 text-sm mb-1">Time Left</p>
+                <p [ngClass]="session()?.timeLeft === '0 min' ? 'text-red-400' : 'text-white'" class="text-lg font-semibold">{{ session()?.timeLeft || '0 min' }}</p>
               </div>
               <div>
                 <p class="text-cyan-200 text-sm mb-1">Rate</p>
-                <p class="text-white text-lg font-semibold">{{ '$' + (session()?.ratePerHour || '0') }}/hr</p>
+                <p class="text-white text-lg font-semibold">{{ session()?.ratePerHour || '0' }}</p>
               </div>
               <div>
                 <p class="text-cyan-200 text-sm mb-1">Game</p>
@@ -83,18 +92,66 @@ interface Player {
           <h2 class="text-2xl font-bold text-white mb-6">Game Details</h2>
 
           <form [formGroup]="gameForm" class="space-y-6">
-            <!-- Game Name -->
+            <!-- Game Selection with Thumbnails -->
             <div>
-              <label for="gameName" class="block text-sm font-medium text-slate-300 mb-2">
-                What game are you playing?
+              <label class="block text-sm font-medium text-slate-300 mb-3">
+                Select a Game
               </label>
-              <input
-                id="gameName"
-                type="text"
-                formControlName="gameName"
-                placeholder="e.g., Counter-Strike 2, Valorant, League of Legends"
-                class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
-              />
+              @if (games().length === 0) {
+                <div class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-lg text-slate-400 text-center">
+                  No games available for this store
+                </div>
+              } @else {
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  @for (game of games(); track game.id) {
+                    @if (game.isActive) {
+                      <button
+                        type="button"
+                        (click)="selectGame(game.id)"
+                        [class.ring-2]="gameForm.get('gameId')?.value === game.id"
+                        [class.ring-cyan-400]="gameForm.get('gameId')?.value === game.id"
+                        [class.border-cyan-400/70]="gameForm.get('gameId')?.value === game.id"
+                        [class.border-white/20]="gameForm.get('gameId')?.value !== game.id"
+                        class="relative overflow-hidden rounded-lg border transition-all duration-200 hover:border-cyan-400/50 group"
+                      >
+                        <!-- Thumbnail -->
+                        @if (game.thumbnail) {
+                          <img
+                            [src]="game.thumbnail"
+                            [alt]="game.name"
+                            class="w-full h-32 object-cover"
+                          />
+                        } @else {
+                          <div class="w-full h-32 bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center">
+                            <span class="text-slate-500">No image</span>
+                          </div>
+                        }
+
+                        <!-- Game Name Overlay -->
+                        <div class="absolute inset-0 bg-black/60 group-hover:bg-black/50 transition-colors flex items-end p-2">
+                          <p class="text-white text-xs font-semibold line-clamp-2">
+                            {{ game.name }}
+                          </p>
+                        </div>
+
+                        <!-- Selection Indicator -->
+                        @if (gameForm.get('gameId')?.value === game.id) {
+                          <div class="absolute top-2 right-2 w-6 h-6 bg-cyan-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-bold">✓</span>
+                          </div>
+                        }
+                      </button>
+                    }
+                  }
+                </div>
+              }
+              <!-- Hidden select for form tracking -->
+              <select
+                formControlName="gameId"
+                class="hidden"
+              >
+              </select>
+              <p class="text-slate-400 text-xs mt-3">Click a game thumbnail to select it</p>
             </div>
 
             <!-- CPU vs Opponent -->
@@ -143,33 +200,23 @@ interface Player {
               </div>
             }
 
-            <!-- Save Details Button -->
+            <!-- Combined Save & Capture Button -->
             <button
               type="button"
-              (click)="saveDetails()"
-              [disabled]="isSavingDetails() || !gameForm.get('gameName')?.value"
-              class="w-full py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+              (click)="saveDetailsAndCapture()"
+              [disabled]="isSavingDetails() || !gameForm.get('gameId')?.value"
+              class="w-full py-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-700 text-white font-bold text-lg rounded-lg transition-all flex items-center justify-center gap-2"
             >
               @if (isSavingDetails()) {
                 <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                <span>Saving...</span>
+                <span>Saving & Preparing...</span>
               } @else {
-                <span>💾</span>
-                <span>Save Game Details</span>
+                <span>🎮</span>
+                <span>Save Game & Capture Results</span>
               }
             </button>
           </form>
         </div>
-
-        <!-- End Game Button -->
-        <button
-          type="button"
-          (click)="startEndSession()"
-          [disabled]="!gameForm.get('gameName')?.value || isSavingDetails()"
-          class="w-full py-4 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 disabled:from-slate-600 disabled:to-slate-700 text-white font-bold text-lg rounded-lg transition-all"
-        >
-          🏁 End Game & Capture Results
-        </button>
       </main>
 
       <!-- OCR Capture Dialog -->
@@ -184,7 +231,7 @@ interface Player {
   `,
   styles: [],
 })
-export class GamingPortalComponent implements OnInit {
+export class GamingPortalComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
@@ -193,15 +240,17 @@ export class GamingPortalComponent implements OnInit {
 
   session = signal<ActiveSession | null>(null);
   otherPlayers = signal<Player[]>([]);
+  games = signal<Game[]>([]);
   isSavingDetails = signal(false);
   showOcrDialog = signal(false);
   isSubmitting = signal(false);
 
   gameForm: FormGroup;
+  private timerInterval: any;
 
   constructor() {
     this.gameForm = this.fb.group({
-      gameName: ['', Validators.required],
+      gameId: ['', Validators.required],
       opponentType: ['cpu'],
       opponentUserId: [''],
     });
@@ -216,11 +265,36 @@ export class GamingPortalComponent implements OnInit {
     }
 
     if (sessionData) {
-      this.session.set(sessionData);
-      this.gameForm.patchValue({ gameName: sessionData.game || '' });
+      this.session.set({ ...sessionData, startedAt: new Date(sessionData.startedAt) });
+      this.updateTimeLeft();
+      this.startTimer();
       this.loadOtherPlayers(sessionData.storeId);
+      this.loadGames(sessionData.storeId);
     } else {
       this.router.navigate(['/']);
+    }
+  }
+
+  private startTimer(): void {
+    this.timerInterval = setInterval(() => this.updateTimeLeft(), 1000);
+  }
+
+  private updateTimeLeft(): void {
+    const sess = this.session();
+    if (!sess) return;
+
+    const startedAt = new Date(sess.startedAt);
+    const now = new Date();
+    const elapsedMinutes = Math.floor((now.getTime() - startedAt.getTime()) / 60000);
+    const remainingMinutes = Math.max(0, sess.durationMins - elapsedMinutes);
+    const timeLeftStr = `${remainingMinutes} min`;
+
+    this.session.set({ ...sess, timeLeft: timeLeftStr });
+  }
+
+  ngOnDestroy(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
     }
   }
 
@@ -239,12 +313,34 @@ export class GamingPortalComponent implements OnInit {
     });
   }
 
-  saveDetails(): void {
+  private loadGames(storeId: string): void {
+    this.http.get<{ data: Game[]; success: boolean }>(
+      `${this.apiUrl}/api/gaming-sessions/games/${storeId}`
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.games.set(response.data.filter(g => g.isActive));
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load games:', err);
+      },
+    });
+  }
+
+  selectGame(gameId: string): void {
+    this.gameForm.patchValue({ gameId });
+  }
+
+  saveDetailsAndCapture(): void {
     if (!this.session() || !this.gameForm.valid) return;
 
     this.isSavingDetails.set(true);
+    const selectedGameId = this.gameForm.get('gameId')?.value;
+    const selectedGame = this.games().find(g => g.id === selectedGameId);
+
     const payload = {
-      game: this.gameForm.get('gameName')?.value,
+      game: selectedGame?.name || '',
       opponentUserId: this.gameForm.get('opponentUserId')?.value || null,
     };
 
@@ -256,16 +352,13 @@ export class GamingPortalComponent implements OnInit {
         this.isSavingDetails.set(false);
         const updatedSession = { ...this.session()!, game: payload.game };
         this.session.set(updatedSession);
+        this.showOcrDialog.set(true);
       },
       error: (err) => {
         console.error('Failed to save details:', err);
         this.isSavingDetails.set(false);
       },
     });
-  }
-
-  startEndSession(): void {
-    this.showOcrDialog.set(true);
   }
 
   closeOcrDialog(): void {
@@ -293,7 +386,7 @@ export class GamingPortalComponent implements OnInit {
       next: () => {
         this.isSubmitting.set(false);
         this.showOcrDialog.set(false);
-        this.router.navigate(['/']);
+        this.gameForm.reset({ opponentType: 'cpu' });
       },
       error: (err) => {
         console.error('Failed to submit results:', err);

@@ -25,6 +25,22 @@ interface CreateRateRequest {
   label?: string;
 }
 
+interface CreatePricingRequest {
+  durationMins: number;
+  ratePerHour: string;
+  label?: string;
+}
+
+interface CreateGameRequest {
+  name: string;
+  thumbnail?: string;
+}
+
+interface UpdateGameRequest {
+  name?: string;
+  thumbnail?: string;
+}
+
 interface UpdateSessionDetailsRequest {
   game?: string;
   opponentUserId?: string;
@@ -450,6 +466,190 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           data: null,
           success: false,
           error: error.message || 'Failed to delete rate option',
+        });
+      }
+    },
+  );
+
+  // Pricing options endpoints (combined duration + rate)
+  router.get(
+    '/pricing/:storeId',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { storeId } = req.params;
+        const options = await gamingSessionService.getPricingOptionsByStore(storeId);
+        const body: ApiResponse<typeof options> = { data: options, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to fetch pricing options',
+        });
+      }
+    },
+  );
+
+  router.post(
+    '/pricing',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const input = req.body as CreatePricingRequest & { storeId: string };
+        const storeId = input.storeId;
+
+        if (!storeId) {
+          res.status(400).json({
+            data: null,
+            success: false,
+            error: 'storeId is required',
+          });
+          return;
+        }
+
+        const option = await gamingSessionService.createPricingOption(
+          storeId,
+          input.durationMins,
+          input.ratePerHour,
+          input.label,
+        );
+        const body: ApiResponse<typeof option> = { data: option, success: true };
+        res.status(201).json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to create pricing option',
+        });
+      }
+    },
+  );
+
+  router.delete(
+    '/pricing/:pricingId',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const { pricingId } = req.params;
+        await gamingSessionService.deletePricingOption(pricingId);
+        const body: ApiResponse<null> = { data: null, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to delete pricing option',
+        });
+      }
+    },
+  );
+
+  // Games endpoints
+  router.get(
+    '/games/:storeId',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { storeId } = req.params;
+        const gamesList = await gamingSessionService.getGamesByStore(storeId);
+        const body: ApiResponse<typeof gamesList> = { data: gamesList, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to fetch games',
+        });
+      }
+    },
+  );
+
+  router.post(
+    '/games',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const input = req.body as CreateGameRequest & { storeId: string };
+        const storeId = input.storeId;
+
+        if (!storeId) {
+          res.status(400).json({
+            data: null,
+            success: false,
+            error: 'storeId is required',
+          });
+          return;
+        }
+
+        const game = await gamingSessionService.createGame(
+          storeId,
+          input.name,
+          input.thumbnail,
+        );
+        const body: ApiResponse<typeof game> = { data: game, success: true };
+        res.status(201).json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to create game',
+        });
+      }
+    },
+  );
+
+  router.put(
+    '/games/:gameId',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const { gameId } = req.params;
+        const input = req.body as UpdateGameRequest;
+
+        const game = await gamingSessionService.updateGame(
+          gameId,
+          input.name || '',
+          input.thumbnail,
+        );
+        const body: ApiResponse<typeof game> = { data: game, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to update game',
+        });
+      }
+    },
+  );
+
+  router.delete(
+    '/games/:gameId',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const { gameId } = req.params;
+        await gamingSessionService.deleteGame(gameId);
+        const body: ApiResponse<null> = { data: null, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to delete game',
         });
       }
     },

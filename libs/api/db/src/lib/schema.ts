@@ -9,6 +9,7 @@ import {
   boolean,
   integer,
   numeric,
+  text,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -237,6 +238,38 @@ export const promotions = pgTable(
     index('idx_promotions_status').on(table.status),
     index('idx_promotions_store_id').on(table.storeId),
     index('idx_promotions_promo_code').on(table.promoCode),
+  ],
+);
+
+export const pricingOptions = pgTable(
+  'pricing_options',
+  {
+    id:           uuid('id').primaryKey().defaultRandom(),
+    storeId:      uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    durationMins: integer('duration_mins').notNull(),
+    ratePerHour:  numeric('rate_per_hour', { precision: 10, scale: 2 }).notNull(),
+    label:        varchar('label', { length: 100 }),
+    isActive:     boolean('is_active').notNull().default(true),
+    createdAt:    tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_pricing_options_store_id').on(table.storeId),
+  ],
+);
+
+export const games = pgTable(
+  'games',
+  {
+    id:          uuid('id').primaryKey().defaultRandom(),
+    storeId:     uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    name:        varchar('name', { length: 255 }).notNull(),
+    thumbnail:   text('thumbnail'), // Base64 encoded JPEG
+    isActive:    boolean('is_active').notNull().default(true),
+    createdAt:   tstz('created_at').notNull().defaultNow(),
+    updatedAt:   tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_games_store_id').on(table.storeId),
   ],
 );
 

@@ -6,6 +6,8 @@ import {
   gamingStations,
   durationOptions,
   rateOptions,
+  pricingOptions,
+  games,
   users,
   stores,
   gameSessionResults,
@@ -59,6 +61,25 @@ interface RateOption {
   ratePerHour: string;
   label?: string;
   isActive: boolean;
+}
+
+interface PricingOption {
+  id: string;
+  storeId: string;
+  durationMins: number;
+  ratePerHour: string;
+  label?: string;
+  isActive: boolean;
+}
+
+interface Game {
+  id: string;
+  storeId: string;
+  name: string;
+  thumbnail?: string;
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface ResultInput {
@@ -314,5 +335,81 @@ export class GamingSessionService {
       .returning();
 
     return result;
+  }
+
+  async getPricingOptionsByStore(storeId: string): Promise<PricingOption[]> {
+    return this.db
+      .select()
+      .from(pricingOptions)
+      .where(eq(pricingOptions.storeId, storeId));
+  }
+
+  async createPricingOption(
+    storeId: string,
+    durationMins: number,
+    ratePerHour: string,
+    label?: string,
+  ): Promise<PricingOption> {
+    const [option] = await this.db
+      .insert(pricingOptions)
+      .values({
+        storeId,
+        durationMins,
+        ratePerHour,
+        label,
+      })
+      .returning();
+
+    return option as PricingOption;
+  }
+
+  async deletePricingOption(optionId: string): Promise<void> {
+    await this.db.delete(pricingOptions).where(eq(pricingOptions.id, optionId));
+  }
+
+  async getGamesByStore(storeId: string): Promise<Game[]> {
+    return this.db
+      .select()
+      .from(games)
+      .where(eq(games.storeId, storeId));
+  }
+
+  async createGame(
+    storeId: string,
+    name: string,
+    thumbnail?: string,
+  ): Promise<Game> {
+    const [game] = await this.db
+      .insert(games)
+      .values({
+        storeId,
+        name,
+        thumbnail,
+      })
+      .returning();
+
+    return game as Game;
+  }
+
+  async updateGame(
+    gameId: string,
+    name: string,
+    thumbnail?: string,
+  ): Promise<Game> {
+    const [updated] = await this.db
+      .update(games)
+      .set({
+        name,
+        thumbnail,
+        updatedAt: new Date(),
+      })
+      .where(eq(games.id, gameId))
+      .returning();
+
+    return updated as Game;
+  }
+
+  async deleteGame(gameId: string): Promise<void> {
+    await this.db.delete(games).where(eq(games.id, gameId));
   }
 }
