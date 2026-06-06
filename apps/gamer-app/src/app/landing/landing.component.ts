@@ -34,32 +34,36 @@ import { environment } from '../../environments/environment';
           <div class="bg-gradient-to-r from-purple-600/20 to-violet-600/20 backdrop-blur-md rounded-2xl p-8 border border-white/10">
             <div>
               <h2 class="text-4xl font-bold text-white mb-2">Welcome, {{ userInfo()?.email || userInfo()?.cellphone || 'Gamer' }}!</h2>
-              <p class="text-purple-200 text-lg">Select a store to access your gaming portal</p>
+              <p class="text-purple-200 text-lg">Select an active gaming session to play</p>
             </div>
           </div>
         </div>
 
-        <!-- Stores Grid -->
+        <!-- Active Sessions Grid -->
         @if (isLoading()) {
           <div class="flex items-center justify-center py-12">
             <div class="inline-block w-8 h-8 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
           </div>
-        } @else if (stores().length === 0) {
+        } @else if (sessions().length === 0) {
           <div class="text-center py-12">
-            <p class="text-purple-200 text-lg">No stores available. Please contact support.</p>
+            <p class="text-purple-200 text-lg">No active gaming sessions. Contact a cashier to start one.</p>
           </div>
         } @else {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @for (store of stores(); track store.id) {
+            @for (session of sessions(); track session.id) {
               <div
-                (click)="selectStore(store)"
-                class="bg-gradient-to-br from-blue-600/30 to-blue-700/30 backdrop-blur-md rounded-xl p-6 border border-white/10 hover:border-blue-400/50 hover:from-blue-600/40 hover:to-blue-700/40 transition-all cursor-pointer"
+                (click)="selectSession(session)"
+                class="bg-gradient-to-br from-cyan-600/30 to-blue-700/30 backdrop-blur-md rounded-xl p-6 border border-white/10 hover:border-cyan-400/50 hover:from-cyan-600/40 hover:to-blue-700/40 transition-all cursor-pointer"
               >
                 <div class="text-4xl mb-3">🎮</div>
-                <h3 class="text-xl font-bold text-white mb-2">{{ store.name }}</h3>
-                <p class="text-blue-200 text-sm mb-4">{{ store.slug }}</p>
-                <button class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                  Enter Store
+                <h3 class="text-xl font-bold text-white mb-2">{{ session.storeName }}</h3>
+                <p class="text-cyan-200 text-sm mb-2">Station: {{ session.stationName }}</p>
+                @if (session.game) {
+                  <p class="text-cyan-200 text-sm mb-2">Game: {{ session.game }}</p>
+                }
+                <p class="text-cyan-200 text-xs mb-4">Duration: {{ session.durationMins }} mins</p>
+                <button class="w-full py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors">
+                  Continue Playing
                 </button>
               </div>
             }
@@ -77,7 +81,7 @@ export class LandingComponent implements OnInit {
   private apiUrl = environment.apiUrl;
 
   userInfo = signal<{ email?: string | null; cellphone?: string | null; role?: string; userId?: string } | null>(null);
-  stores = signal<Array<{ id: string; name: string; slug: string }>>([]);
+  sessions = signal<Array<{ id: string; storeId: string; storeName: string; stationName: string; game?: string; startedAt: Date; durationMins: number }>>([]);
   isLoading = signal(true);
 
   ngOnInit(): void {
@@ -88,16 +92,16 @@ export class LandingComponent implements OnInit {
       userId: this.authService.userId() || undefined,
     });
 
-    this.fetchStores();
+    this.fetchActiveSessions();
   }
 
-  private fetchStores(): void {
-    this.http.get<{ data: Array<{ id: string; name: string; slug: string }>; success: boolean }>(
-      `${this.apiUrl}/api/auth/stores`
+  private fetchActiveSessions(): void {
+    this.http.get<{ data: Array<{ id: string; storeId: string; storeName: string; stationName: string; game?: string; startedAt: Date; durationMins: number }>; success: boolean }>(
+      `${this.apiUrl}/api/gaming-sessions/user/active`
     ).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.stores.set(response.data);
+          this.sessions.set(response.data);
         }
         this.isLoading.set(false);
       },
@@ -107,8 +111,8 @@ export class LandingComponent implements OnInit {
     });
   }
 
-  selectStore(store: { id: string; name: string; slug: string }): void {
-    console.log('Selected store:', store);
+  selectSession(session: { id: string; storeId: string; storeName: string; stationName: string; game?: string }): void {
+    this.router.navigate(['/portal', session.storeId], { state: { session } });
   }
 
   logout(): void {

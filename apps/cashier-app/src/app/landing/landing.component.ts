@@ -209,29 +209,39 @@ interface Promotion {
                 <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
                   <span>👤</span>
                   <span>Player</span>
+                  @if (players().length === 0) {
+                    <span class="text-orange-400 text-xs">(Loading...)</span>
+                  }
                 </label>
                 <div class="flex gap-2">
                   <select
                     formControlName="playerSearch"
                     class="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                    [disabled]="players().length === 0"
                   >
-                    <option value="">Select player...</option>
-                    @for (player of players(); track player.id) {
-                      <option [value]="player.id" class="bg-slate-800 text-white">
-                        {{ player.email || player.cellphone }}
-                      </option>
+                    @if (players().length === 0) {
+                      <option value="">No players available</option>
+                    } @else {
+                      <option value="">Select a player...</option>
+                      @for (player of players(); track player.id) {
+                        <option [value]="player.id" class="bg-slate-800 text-white">
+                          {{ player.email || player.cellphone }}
+                        </option>
+                      }
                     }
-                    <option value="__add_player__" class="bg-slate-800 text-white">+ Add New Player</option>
                   </select>
                   <button
                     type="button"
                     (click)="showAddPlayerModal.set(true)"
                     class="px-3 py-2 bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-400/50 rounded-lg text-cyan-400 hover:text-cyan-300 text-sm font-semibold transition-colors"
-                    title="Search players from other stores"
+                    title="Add or search for players"
                   >
-                    🔍
+                    ➕
                   </button>
                 </div>
+                @if (players().length > 0) {
+                  <p class="text-xs text-slate-400 mt-1">{{ players().length }} player(s) available</p>
+                }
               </div>
 
               <!-- Station -->
@@ -267,6 +277,25 @@ interface Promotion {
                   @for (duration of durationOptions(); track duration.id) {
                     @if (duration.isActive) {
                       <option [value]="duration.minutes" class="bg-slate-800 text-white">{{ duration.minutes }} min</option>
+                    }
+                  }
+                </select>
+              </div>
+
+              <!-- Rate -->
+              <div>
+                <label class="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-2">
+                  <span>💰</span>
+                  <span>Rate</span>
+                </label>
+                <select
+                  formControlName="rate"
+                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                >
+                  <option value="">Select rate...</option>
+                  @for (rateOption of rateOptions(); track rateOption.id) {
+                    @if (rateOption.isActive) {
+                      <option [value]="rateOption.ratePerHour" class="bg-slate-800 text-white">{{ rateOption.ratePerHour }}/hr</option>
                     }
                   }
                 </select>
@@ -627,7 +656,7 @@ export class LandingComponent implements OnInit {
       playerSearch: ['', Validators.required],
       station: ['', Validators.required],
       duration: ['', Validators.required],
-      rate: ['0'],
+      rate: ['', Validators.required],
       notes: [''],
       sessionType: ['gaming'],
       eventId: [''],
@@ -827,18 +856,24 @@ export class LandingComponent implements OnInit {
     const formData = this.gamingSessionForm.value;
     const storeId = this.authService.storeId();
 
-    // Get rate from the first available rate option, or use the form value
-    let rate = formData.rate || '0';
-    const firstRate = this.rateOptions()[0];
-    if (firstRate && !formData.rate) {
-      rate = firstRate.ratePerHour;
+    // Validate player is selected
+    if (!formData.playerSearch) {
+      console.error('No player selected');
+      return;
+    }
+
+    // Validate rate is selected
+    if (!formData.rate) {
+      console.error('No rate selected');
+      return;
     }
 
     // Build session request with type-specific metadata
     const sessionRequest: any = {
+      userId: formData.playerSearch,
       stationId: formData.station,
       durationMins: parseInt(formData.duration, 10),
-      ratePerHour: rate,
+      ratePerHour: formData.rate,
       opponentType: undefined,
       notes: formData.notes,
     };

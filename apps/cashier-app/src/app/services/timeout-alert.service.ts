@@ -17,7 +17,7 @@ export interface SessionTimeoutData {
 export class TimeoutAlertService {
   showTimeoutAlert = signal(false);
   timeoutSessionData = signal<SessionTimeoutData | null>(null);
-  private alertedSessions = signal<Set<string>>(new Set());
+  private alertedSessions: Set<string> = new Set();
   private monitoringInterval: any;
 
   constructor(
@@ -64,10 +64,10 @@ export class TimeoutAlertService {
           const timeLeft = `${remainingMinutes} min`;
 
           const isTimedOut = timeLeft === '0 min';
-          const hasAlert = this.alertedSessions().has(session.id);
+          const hasAlert = this.alertedSessions.has(session.id);
 
           if (isTimedOut && !hasAlert) {
-            this.alertedSessions().add(session.id);
+            this.alertedSessions.add(session.id);
             const cost = (parseFloat(session.ratePerHour) / 60) * session.durationMins;
             this.timeoutSessionData.set({
               playerName: session.playerName || 'CrystalWolf',
@@ -92,6 +92,6 @@ export class TimeoutAlertService {
   }
 
   markSessionAsAlerted(sessionId: string): void {
-    this.alertedSessions().add(sessionId);
+    this.alertedSessions.add(sessionId);
   }
 }

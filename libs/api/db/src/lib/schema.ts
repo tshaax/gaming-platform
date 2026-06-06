@@ -145,25 +145,28 @@ export const rateOptions = pgTable(
 export const gamingSessions = pgTable(
   'gaming_sessions',
   {
-    id:           uuid('id').primaryKey().defaultRandom(),
-    storeId:      uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
-    userId:       uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    stationId:    uuid('station_id').notNull().references(() => gamingStations.id, { onDelete: 'restrict' }),
-    durationMins: integer('duration_mins').notNull(),
-    ratePerHour:  numeric('rate_per_hour', { precision: 10, scale: 2 }).notNull(),
-    opponentType: varchar('opponent_type', { length: 50 }),
-    notes:        varchar('notes', { length: 1000 }),
-    status:       varchar('status', { length: 20 }).notNull().default('active'),
-    startedAt:    tstz('started_at').notNull().defaultNow(),
-    endedAt:      tstz('ended_at'),
-    createdAt:    tstz('created_at').notNull().defaultNow(),
-    updatedAt:    tstz('updated_at').notNull().defaultNow(),
+    id:             uuid('id').primaryKey().defaultRandom(),
+    storeId:        uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    userId:         uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    stationId:      uuid('station_id').notNull().references(() => gamingStations.id, { onDelete: 'restrict' }),
+    durationMins:   integer('duration_mins').notNull(),
+    ratePerHour:    numeric('rate_per_hour', { precision: 10, scale: 2 }).notNull(),
+    opponentType:   varchar('opponent_type', { length: 50 }),
+    opponentUserId: uuid('opponent_user_id').references(() => users.id, { onDelete: 'set null' }),
+    game:           varchar('game', { length: 255 }),
+    notes:          varchar('notes', { length: 1000 }),
+    status:         varchar('status', { length: 20 }).notNull().default('active'),
+    startedAt:      tstz('started_at').notNull().defaultNow(),
+    endedAt:        tstz('ended_at'),
+    createdAt:      tstz('created_at').notNull().defaultNow(),
+    updatedAt:      tstz('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_gaming_sessions_store_id').on(table.storeId),
     index('idx_gaming_sessions_user_id').on(table.userId),
     index('idx_gaming_sessions_station_id').on(table.stationId),
     index('idx_gaming_sessions_status').on(table.status),
+    index('idx_gaming_sessions_opponent_user_id').on(table.opponentUserId),
   ],
 );
 
@@ -234,5 +237,24 @@ export const promotions = pgTable(
     index('idx_promotions_status').on(table.status),
     index('idx_promotions_store_id').on(table.storeId),
     index('idx_promotions_promo_code').on(table.promoCode),
+  ],
+);
+
+export const gameSessionResults = pgTable(
+  'game_session_results',
+  {
+    id:         uuid('id').primaryKey().defaultRandom(),
+    sessionId:  uuid('session_id').notNull().references(() => gamingSessions.id, { onDelete: 'cascade' }),
+    game:       varchar('game', { length: 255 }),
+    score:      integer('score'),
+    placement:  integer('placement'),
+    result:     varchar('result', { length: 50 }),
+    kills:      integer('kills').notNull().default(0),
+    deaths:     integer('deaths').notNull().default(0),
+    assists:    integer('assists').notNull().default(0),
+    createdAt:  tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_game_session_results_session_id').on(table.sessionId),
   ],
 );

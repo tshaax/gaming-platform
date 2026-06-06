@@ -7,6 +7,8 @@ import {
   primaryKey,
   check,
   boolean,
+  integer,
+  numeric,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -93,5 +95,166 @@ export const refreshTokens = pgTable(
   (table) => [
     index('idx_refresh_tokens_user_id').on(table.userId),
     index('idx_refresh_tokens_token_hash').on(table.tokenHash),
+  ],
+);
+
+export const gamingStations = pgTable(
+  'gaming_stations',
+  {
+    id:        uuid('id').primaryKey().defaultRandom(),
+    storeId:   uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    name:      varchar('name', { length: 255 }).notNull(),
+    isActive:  boolean('is_active').notNull().default(true),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+    updatedAt: tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_gaming_stations_store_id').on(table.storeId),
+  ],
+);
+
+export const durationOptions = pgTable(
+  'duration_options',
+  {
+    id:        uuid('id').primaryKey().defaultRandom(),
+    storeId:   uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    minutes:   integer('minutes').notNull(),
+    isActive:  boolean('is_active').notNull().default(true),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_duration_options_store_id').on(table.storeId),
+  ],
+);
+
+export const rateOptions = pgTable(
+  'rate_options',
+  {
+    id:        uuid('id').primaryKey().defaultRandom(),
+    storeId:   uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    ratePerHour: numeric('rate_per_hour', { precision: 10, scale: 2 }).notNull(),
+    label:     varchar('label', { length: 100 }),
+    isActive:  boolean('is_active').notNull().default(true),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_rate_options_store_id').on(table.storeId),
+  ],
+);
+
+export const gamingSessions = pgTable(
+  'gaming_sessions',
+  {
+    id:             uuid('id').primaryKey().defaultRandom(),
+    storeId:        uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+    userId:         uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    stationId:      uuid('station_id').notNull().references(() => gamingStations.id, { onDelete: 'restrict' }),
+    durationMins:   integer('duration_mins').notNull(),
+    ratePerHour:    numeric('rate_per_hour', { precision: 10, scale: 2 }).notNull(),
+    opponentType:   varchar('opponent_type', { length: 50 }),
+    opponentUserId: uuid('opponent_user_id').references(() => users.id, { onDelete: 'set null' }),
+    game:           varchar('game', { length: 255 }),
+    notes:          varchar('notes', { length: 1000 }),
+    status:         varchar('status', { length: 20 }).notNull().default('active'),
+    startedAt:      tstz('started_at').notNull().defaultNow(),
+    endedAt:        tstz('ended_at'),
+    createdAt:      tstz('created_at').notNull().defaultNow(),
+    updatedAt:      tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_gaming_sessions_store_id').on(table.storeId),
+    index('idx_gaming_sessions_user_id').on(table.userId),
+    index('idx_gaming_sessions_station_id').on(table.stationId),
+    index('idx_gaming_sessions_status').on(table.status),
+    index('idx_gaming_sessions_opponent_user_id').on(table.opponentUserId),
+  ],
+);
+
+export const events = pgTable(
+  'events',
+  {
+    id:             uuid('id').primaryKey().defaultRandom(),
+    storeId:        uuid('store_id').references(() => stores.id, { onDelete: 'cascade' }),
+    title:          varchar('title', { length: 255 }).notNull(),
+    game:           varchar('game', { length: 255 }),
+    eventType:      varchar('event_type', { length: 50 }).notNull().default('tournament'),
+    startDate:      tstz('start_date').notNull(),
+    endDate:        tstz('end_date'),
+    prizePool:      numeric('prize_pool', { precision: 10, scale: 2 }),
+    maxPlayers:     integer('max_players'),
+    currentPlayers: integer('current_players').notNull().default(0),
+    status:         varchar('status', { length: 20 }).notNull().default('upcoming'),
+    description:    varchar('description', { length: 1000 }),
+    createdAt:      tstz('created_at').notNull().defaultNow(),
+    updatedAt:      tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_events_status').on(table.status),
+    index('idx_events_store_id').on(table.storeId),
+  ],
+);
+
+export const eventResults = pgTable(
+  'event_results',
+  {
+    id:               uuid('id').primaryKey().defaultRandom(),
+    eventId:          uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+    playerUsername:   varchar('player_username', { length: 255 }).notNull(),
+    result:           varchar('result', { length: 20 }).notNull(),
+    placement:        integer('placement'),
+    score:            varchar('score', { length: 100 }),
+    pointsEarned:     integer('points_earned'),
+    kills:            integer('kills').notNull().default(0),
+    deaths:           integer('deaths').notNull().default(0),
+    assists:          integer('assists').notNull().default(0),
+    createdAt:        tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_event_results_event_id').on(table.eventId),
+  ],
+);
+
+export const promotions = pgTable(
+  'promotions',
+  {
+    id:              uuid('id').primaryKey().defaultRandom(),
+    storeId:         uuid('store_id').references(() => stores.id, { onDelete: 'cascade' }),
+    title:           varchar('title', { length: 255 }).notNull(),
+    type:            varchar('type', { length: 50 }).notNull().default('discount'),
+    promoCode:       varchar('promo_code', { length: 50 }).notNull().unique(),
+    discountValue:   numeric('discount_value', { precision: 5, scale: 2 }),
+    status:          varchar('status', { length: 20 }).notNull().default('scheduled'),
+    startDate:       tstz('start_date').notNull(),
+    endDate:         tstz('end_date').notNull(),
+    targetAudience:  varchar('target_audience', { length: 50 }).notNull().default('all_players'),
+    maxUsage:        integer('max_usage'),
+    currentUsage:    integer('current_usage').notNull().default(0),
+    description:     varchar('description', { length: 1000 }),
+    createdAt:       tstz('created_at').notNull().defaultNow(),
+    updatedAt:       tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_promotions_status').on(table.status),
+    index('idx_promotions_store_id').on(table.storeId),
+    index('idx_promotions_promo_code').on(table.promoCode),
+  ],
+);
+
+export const gameSessionResults = pgTable(
+  'game_session_results',
+  {
+    id:         uuid('id').primaryKey().defaultRandom(),
+    sessionId:  uuid('session_id').notNull().references(() => gamingSessions.id, { onDelete: 'cascade' }),
+    game:       varchar('game', { length: 255 }),
+    score:      integer('score'),
+    placement:  integer('placement'),
+    result:     varchar('result', { length: 50 }),
+    kills:      integer('kills').notNull().default(0),
+    deaths:     integer('deaths').notNull().default(0),
+    assists:    integer('assists').notNull().default(0),
+    createdAt:  tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_game_session_results_session_id').on(table.sessionId),
   ],
 );

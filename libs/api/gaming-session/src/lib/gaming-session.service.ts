@@ -8,6 +8,7 @@ import {
   rateOptions,
   users,
   stores,
+  gameSessionResults,
 } from '@org/api/db';
 
 interface CreateGamingSessionInput {
@@ -28,6 +29,8 @@ interface GamingSession {
   durationMins: number;
   ratePerHour: string;
   opponentType?: string;
+  opponentUserId?: string;
+  game?: string;
   notes?: string;
   status: string;
   startedAt: Date;
@@ -58,6 +61,29 @@ interface RateOption {
   isActive: boolean;
 }
 
+interface ResultInput {
+  game?: string;
+  score?: number;
+  placement?: number;
+  result?: string;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+}
+
+interface ActiveSessionData {
+  id: string;
+  storeId: string;
+  storeName: string;
+  stationName: string;
+  durationMins: number;
+  ratePerHour: string;
+  opponentType?: string;
+  notes?: string;
+  game?: string;
+  startedAt: Date;
+}
+
 export class GamingSessionService {
   private db: ReturnType<typeof drizzle>;
 
@@ -66,6 +92,10 @@ export class GamingSessionService {
   }
 
   async createGamingSession(input: CreateGamingSessionInput): Promise<GamingSession> {
+    const rate = typeof input.ratePerHour === 'string'
+      ? parseFloat(input.ratePerHour).toString()
+      : input.ratePerHour;
+
     const [session] = await this.db
       .insert(gamingSessions)
       .values({
@@ -73,7 +103,7 @@ export class GamingSessionService {
         userId: input.userId,
         stationId: input.stationId,
         durationMins: input.durationMins,
-        ratePerHour: input.ratePerHour,
+        ratePerHour: rate,
         opponentType: input.opponentType,
         notes: input.notes,
         status: 'active',
@@ -223,5 +253,66 @@ export class GamingSessionService {
 
   async deleteRateOption(optionId: string): Promise<void> {
     await this.db.delete(rateOptions).where(eq(rateOptions.id, optionId));
+  }
+
+  async getActiveSessionsForUser(userId: string): Promise<ActiveSessionData[]> {
+    return this.db
+      .select({
+        id: gamingSessions.id,
+        storeId: gamingSessions.storeId,
+        storeName: stores.name,
+        stationName: gamingStations.name,
+        durationMins: gamingSessions.durationMins,
+        ratePerHour: gamingSessions.ratePerHour,
+        opponentType: gamingSessions.opponentType,
+        notes: gamingSessions.notes,
+        game: gamingSessions.game,
+        startedAt: gamingSessions.startedAt,
+      })
+      .from(gamingSessions)
+      .innerJoin(stores, eq(gamingSessions.storeId, stores.id))
+      .innerJoin(gamingStations, eq(gamingSessions.stationId, gamingStations.id))
+      .where(
+        and(
+          eq(gamingSessions.userId, userId),
+          eq(gamingSessions.status, 'active'),
+        ),
+      );
+  }
+
+  async updateSessionDetails(
+    sessionId: string,
+    game?: string,
+    opponentUserId?: string,
+  ): Promise<GamingSession> {
+    const [updated] = await this.db
+      .update(gamingSessions)
+      .set({
+        game,
+        opponentUserId,
+        updatedAt: new Date(),
+      })
+      .where(eq(gamingSessions.id, sessionId))
+      .returning();
+
+    return updated as GamingSession;
+  }
+
+  async createSessionResult(sessionId: string, data: ResultInput): Promise<unknown> {
+    const [result] = await this.db
+      .insert(gameSessionResults)
+      .values({
+        sessionId,
+        game: data.game,
+        score: data.score,
+        placement: data.placement,
+        result: data.result,
+        kills: data.kills ?? 0,
+        deaths: data.deaths ?? 0,
+        assists: data.assists ?? 0,
+      })
+      .returning();
+
+    return result;
   }
 }

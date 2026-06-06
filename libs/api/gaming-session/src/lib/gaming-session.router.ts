@@ -4,6 +4,7 @@ import { authenticate, requireRole } from '@org/api/auth';
 import type { ApiResponse } from '@org/models';
 
 interface CreateSessionRequest {
+  userId?: string;
   stationId: string;
   durationMins: number;
   ratePerHour: string;
@@ -24,6 +25,21 @@ interface CreateRateRequest {
   label?: string;
 }
 
+interface UpdateSessionDetailsRequest {
+  game?: string;
+  opponentUserId?: string;
+}
+
+interface SubmitResultRequest {
+  game?: string;
+  score?: number;
+  placement?: number;
+  result?: string;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+}
+
 export function createGamingSessionRouter(gamingSessionService: GamingSessionService): Router {
   const router = Router();
 
@@ -37,9 +53,13 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
         const storeId = user.storeId;
         const input = req.body as CreateSessionRequest;
 
+        // Use userId from request body (for cashiers creating sessions for players)
+        // or fall back to JWT token's sub (for players creating their own sessions)
+        const userId = input.userId || user.sub;
+
         const session = await gamingSessionService.createGamingSession({
           storeId,
-          userId: user.sub,
+          userId,
           stationId: input.stationId,
           durationMins: input.durationMins,
           ratePerHour: input.ratePerHour,
@@ -51,6 +71,7 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
         res.status(201).json(body);
       } catch (err: unknown) {
         const error = err as Error;
+        console.error('[Gaming Session Error]', error);
         res.status(500).json({
           data: null,
           success: false,
@@ -98,6 +119,90 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           data: null,
           success: false,
           error: error.message || 'Failed to fetch gaming sessions',
+        });
+      }
+    },
+  );
+
+  // Get active sessions for current user
+  router.get(
+    '/user/active',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const user = (req as any).user;
+        const sessions = await gamingSessionService.getActiveSessionsForUser(user.sub);
+        const body: ApiResponse<typeof sessions> = { data: sessions, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to fetch active gaming sessions',
+        });
+      }
+    },
+  );
+
+  // Update session details (game and opponent)
+  router.put(
+    '/:sessionId/details',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { sessionId } = req.params;
+        const input = req.body as UpdateSessionDetailsRequest;
+
+        const session = await gamingSessionService.updateSessionDetails(
+          sessionId,
+          input.game,
+          input.opponentUserId,
+        );
+        const body: ApiResponse<typeof session> = { data: session, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to update session details',
+        });
+      }
+    },
+  );
+
+  // Submit result and end session
+  router.post(
+    '/:sessionId/results',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { sessionId } = req.params;
+        const input = req.body as SubmitResultRequest;
+
+        // Create result record
+        await gamingSessionService.createSessionResult(sessionId, {
+          game: input.game,
+          score: input.score,
+          placement: input.placement,
+          result: input.result,
+          kills: input.kills,
+          deaths: input.deaths,
+          assists: input.assists,
+        });
+
+        // End the session
+        const endedSession = await gamingSessionService.endGamingSession(sessionId);
+
+        const body: ApiResponse<typeof endedSession> = { data: endedSession, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to submit result',
         });
       }
     },
