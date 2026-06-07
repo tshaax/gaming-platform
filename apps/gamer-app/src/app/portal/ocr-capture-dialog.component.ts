@@ -6,11 +6,7 @@ import Tesseract from 'tesseract.js';
 export interface CaptureResult {
   game: string;
   score: number;
-  placement: number;
   result: string;
-  kills: number;
-  deaths: number;
-  assists: number;
 }
 
 type DialogMode = 'capture' | 'result';
@@ -149,26 +145,10 @@ type CaptureMode = 'camera' | 'upload';
             <div class="space-y-4">
               <div class="bg-cyan-500/10 border border-cyan-400/30 rounded-lg p-4">
                 <p class="text-cyan-300 text-sm font-semibold mb-2">📊 OCR Results Detected</p>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-3 gap-3">
                   <div class="bg-slate-700/50 rounded p-2">
                     <p class="text-slate-400 text-xs">Score</p>
                     <p class="text-white font-bold">{{ formData.score }}</p>
-                  </div>
-                  <div class="bg-slate-700/50 rounded p-2">
-                    <p class="text-slate-400 text-xs">Placement</p>
-                    <p class="text-white font-bold">{{ formData.placement }}</p>
-                  </div>
-                  <div class="bg-slate-700/50 rounded p-2">
-                    <p class="text-slate-400 text-xs">Kills</p>
-                    <p class="text-white font-bold">{{ formData.kills }}</p>
-                  </div>
-                  <div class="bg-slate-700/50 rounded p-2">
-                    <p class="text-slate-400 text-xs">Deaths</p>
-                    <p class="text-white font-bold">{{ formData.deaths }}</p>
-                  </div>
-                  <div class="bg-slate-700/50 rounded p-2">
-                    <p class="text-slate-400 text-xs">Assists</p>
-                    <p class="text-white font-bold">{{ formData.assists }}</p>
                   </div>
                   <div class="bg-slate-700/50 rounded p-2">
                     <p class="text-slate-400 text-xs">Result</p>
@@ -211,17 +191,6 @@ type CaptureMode = 'camera' | 'upload';
               />
             </div>
 
-            <!-- Placement -->
-            <div>
-              <label for="placement" class="block text-sm text-slate-300 mb-2">Placement</label>
-              <input
-                id="placement"
-                [(ngModel)]="formData.placement"
-                type="number"
-                class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20"
-              />
-            </div>
-
             <!-- Result -->
             <div>
               <label for="result" class="block text-sm text-slate-300 mb-2">Result</label>
@@ -235,37 +204,6 @@ type CaptureMode = 'camera' | 'upload';
                 <option value="loss">Loss 😔</option>
                 <option value="draw">Draw 🤝</option>
               </select>
-            </div>
-
-            <!-- Stats Row -->
-            <div class="grid grid-cols-3 gap-3">
-              <div>
-                <label for="kills" class="block text-sm text-slate-300 mb-2">Kills</label>
-                <input
-                  id="kills"
-                  [(ngModel)]="formData.kills"
-                  type="number"
-                  class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-white/20"
-                />
-              </div>
-              <div>
-                <label for="deaths" class="block text-sm text-slate-300 mb-2">Deaths</label>
-                <input
-                  id="deaths"
-                  [(ngModel)]="formData.deaths"
-                  type="number"
-                  class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-white/20"
-                />
-              </div>
-              <div>
-                <label for="assists" class="block text-sm text-slate-300 mb-2">Assists</label>
-                <input
-                  id="assists"
-                  [(ngModel)]="formData.assists"
-                  type="number"
-                  class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-white/20"
-                />
-              </div>
             </div>
 
             <!-- Action Buttons -->
@@ -311,11 +249,7 @@ export class OcrCaptureDialogComponent implements OnDestroy {
   formData = {
     game: '',
     score: 0,
-    placement: 1,
     result: '',
-    kills: 0,
-    deaths: 0,
-    assists: 0,
   };
 
   private mediaStream: MediaStream | null = null;
@@ -420,33 +354,6 @@ export class OcrCaptureDialogComponent implements OnDestroy {
       this.formData.score = parseInt(scoreMatch[1], 10);
     }
 
-    // Kills: look for "kills: XXX" or "k: XXX"
-    const killsMatch = normalized.match(/(?:kills?|k)[:\s]+(\d+)/i);
-    if (killsMatch) {
-      this.formData.kills = parseInt(killsMatch[1], 10);
-    }
-
-    // Deaths: look for "deaths: XXX" or "d: XXX"
-    const deathsMatch = normalized.match(/(?:deaths?|d)[:\s]+(\d+)/i);
-    if (deathsMatch) {
-      this.formData.deaths = parseInt(deathsMatch[1], 10);
-    }
-
-    // Assists: look for "assists: XXX" or "a: XXX"
-    const assistsMatch = normalized.match(/(?:assists?|a)[:\s]+(\d+)/i);
-    if (assistsMatch) {
-      this.formData.assists = parseInt(assistsMatch[1], 10);
-    }
-
-    // Placement: look for "1st", "2nd", "3rd", "place: X", "#X"
-    const placementMatch = normalized.match(
-      /(?:#|place|rank|position|placement)[:\s]*(\d+)|(\d+)(?:st|nd|rd|th)/i
-    );
-    if (placementMatch) {
-      const placementStr = placementMatch[1] || placementMatch[2];
-      this.formData.placement = parseInt(placementStr, 10);
-    }
-
     // Result: look for "win", "loss", "draw"
     if (normalized.includes('win') || normalized.includes('victory') || normalized.includes('winner')) {
       this.formData.result = 'win';
@@ -472,11 +379,7 @@ export class OcrCaptureDialogComponent implements OnDestroy {
     this.formData = {
       game: this.sessionGame,
       score: 0,
-      placement: 1,
       result: '',
-      kills: 0,
-      deaths: 0,
-      assists: 0,
     };
   }
 

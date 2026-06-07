@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -18,12 +18,26 @@ import { environment } from '../../environments/environment';
             <img src="/playground-logo.png" alt="Playground Logo" class="h-12 w-auto" />
             <h1 class="text-2xl font-bold text-white">Playground</h1>
           </div>
-          <button
-            (click)="logout()"
-            class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-          >
-            Logout
-          </button>
+          <div class="flex items-center gap-3">
+            <button
+              (click)="viewLeaderboard()"
+              class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            >
+              🏆 Leaderboard
+            </button>
+            <button
+              (click)="viewPlayHistory()"
+              class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              📊 Play History
+            </button>
+            <button
+              (click)="logout()"
+              class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
@@ -74,11 +88,12 @@ import { environment } from '../../environments/environment';
   `,
   styles: [],
 })
-export class LandingComponent implements OnInit {
+export class LandingComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
+  private expirationCheckInterval: any;
 
   userInfo = signal<{ email?: string | null; cellphone?: string | null; role?: string; userId?: string } | null>(null);
   sessions = signal<Array<{ id: string; storeId: string; storeName: string; stationName: string; game?: string; startedAt: Date; durationMins: number }>>([]);
@@ -93,6 +108,58 @@ export class LandingComponent implements OnInit {
     });
 
     this.fetchActiveSessions();
+    this.startExpirationCheck();
+  }
+
+  ngOnDestroy(): void {
+    if (this.expirationCheckInterval) {
+      clearInterval(this.expirationCheckInterval);
+    }
+  }
+
+  private startExpirationCheck(): void {
+    this.expirationCheckInterval = setInterval(() => {
+      this.removeExpiredSessions();
+    }, 1000); // Check every second
+  }
+
+  private removeExpiredSessions(): void {
+    const currentSessions = this.sessions();
+    const activeSessions: typeof currentSessions = [];
+    const expiredSessions: typeof currentSessions = [];
+
+    currentSessions.forEach(session => {
+      const startedAt = new Date(session.startedAt);
+      const now = new Date();
+      const elapsedSeconds = Math.floor((now.getTime() - startedAt.getTime()) / 1000);
+      const durationSeconds = session.durationMins * 60;
+
+      if (elapsedSeconds < durationSeconds) {
+        activeSessions.push(session);
+      } else {
+        expiredSessions.push(session);
+      }
+    });
+
+    // End expired sessions on the backend
+    expiredSessions.forEach(session => {
+      console.log(`Ending expired session: ${session.id}`);
+      this.http.put(
+        `${this.apiUrl}/api/gaming-sessions/${session.id}/end`,
+        {}
+      ).subscribe({
+        next: () => {
+          console.log(`Session ${session.id} ended successfully`);
+        },
+        error: (err) => console.error(`Failed to end session ${session.id}:`, err),
+      });
+    });
+
+    // Update sessions list if any expired
+    if (activeSessions.length !== currentSessions.length) {
+      console.log(`Removed ${currentSessions.length - activeSessions.length} expired session(s)`);
+      this.sessions.set(activeSessions);
+    }
   }
 
   private fetchActiveSessions(): void {
@@ -113,6 +180,14 @@ export class LandingComponent implements OnInit {
 
   selectSession(session: { id: string; storeId: string; storeName: string; stationName: string; game?: string }): void {
     this.router.navigate(['/portal', session.storeId], { state: { session } });
+  }
+
+  viewPlayHistory(): void {
+    this.router.navigate(['/history']);
+  }
+
+  viewLeaderboard(): void {
+    this.router.navigate(['/leaderboard']);
   }
 
   logout(): void {

@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
-import { stores } from '@org/api/db';
+import { stores, pricingOptions } from '@org/api/db';
 
 export interface CreateStoreInput {
   name: string;
@@ -90,5 +90,13 @@ export class StoreService {
     }
 
     return { success: true };
+  }
+
+  async getPricingOptions(storeId: string) {
+    return this.db
+      .select()
+      .from(pricingOptions)
+      .where(eq(pricingOptions.storeId, storeId))
+      .orderBy(pricingOptions.durationMins);
   }
 }

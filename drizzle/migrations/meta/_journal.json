@@ -43,6 +43,41 @@
       "when": 1780727008260,
       "tag": "0005_soft_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1749347540000,
+      "tag": "0006_add_entry_fee_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1749348000000,
+      "tag": "0007_event_registration",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1749348500000,
+      "tag": "0008_tournament_rounds",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780820966664,
+      "tag": "0009_concerned_tana_nile",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780824697897,
+      "tag": "0010_smooth_master_mold",
+      "breakpoints": true
     }
   ]
 }

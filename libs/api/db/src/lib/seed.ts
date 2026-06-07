@@ -4,7 +4,8 @@ dotenv.config({ path: '.env' });
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { users, stores, userStoreMemberships } from './schema';
+import { eq } from 'drizzle-orm';
+import { users, stores, userStoreMemberships, games } from './schema';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -84,13 +85,6 @@ async function seed() {
     for (const account of TEST_ACCOUNTS) {
       const passwordHash = await bcrypt.hash(account.password, BCRYPT_ROUNDS);
 
-      // Check if user already exists
-      const existingUser = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(undefined)
-        .limit(1);
-
       let userId: string;
 
       // Try to insert user, ignore if email/cellphone already exists
@@ -108,11 +102,11 @@ async function seed() {
         userId = userResult[0].id;
         console.log(`✓ Created ${account.role} user: ${account.email}`);
       } else {
-        // User already exists, we need to find their ID
-        // Query by email or cellphone
+        // User already exists, we need to find their ID by email
         const existing = await db
           .select({ id: users.id })
           .from(users)
+          .where(eq(users.email, account.email.toLowerCase()))
           .limit(1);
 
         if (existing.length === 0) {
@@ -138,6 +132,29 @@ async function seed() {
       console.log(
         `✓ Assigned ${account.role} role at test store`,
       );
+    }
+
+    // Create sample games for the test store
+    const sampleGames = [
+      { name: 'League of Legends' },
+      { name: 'Dota 2' },
+      { name: 'Counter-Strike 2' },
+      { name: 'Valorant' },
+      { name: 'Fortnite' },
+    ];
+
+    for (const game of sampleGames) {
+      // Insert games, ignore if already exist
+      await db
+        .insert(games)
+        .values({
+          storeId,
+          name: game.name,
+          thumbnail: null,
+          isActive: true,
+        })
+        .onConflictDoNothing();
+      console.log(`✓ Game available: ${game.name}`);
     }
 
     console.log('\n✅ Seed completed successfully!\n');

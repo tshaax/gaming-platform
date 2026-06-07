@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, computed } from '@angular/core';
+import { Component, inject, OnInit, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import {
@@ -24,6 +24,8 @@ interface Event {
   title: string;
   game?: string;
   eventType: string;
+  entryFeeType: string;
+  eligibleSessions?: number;
   startDate: string;
   endDate?: string;
   prizePool?: string;
@@ -191,7 +193,7 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                           </span>
                         </div>
                         <p class="text-slate-400 text-sm">
-                          {{ event.game }} · {{ event.eventType }}
+                          {{ event.game }} · {{ event.eventType }} · {{ formatEntryFeeType(event.entryFeeType) }}
                           @if (event.storeId) {
                             · {{ getStoreName(event.storeId) }}
                           } @else {
@@ -258,6 +260,7 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                   <label class="block text-slate-300 text-sm font-semibold mb-2">Select Store</label>
                   <select
                     formControlName="storeId"
+                    (change)="onStoreSelected()"
                     class="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                   >
                     <option value="">All Stores (Global Event)</option>
@@ -278,12 +281,15 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="block text-slate-300 text-sm font-semibold mb-2">Game</label>
-                    <input
-                      type="text"
+                    <select
                       formControlName="game"
-                      placeholder="e.g., League of Legends"
-                      class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
-                    />
+                      class="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                    >
+                      <option value="">Select a game</option>
+                      @for (game of games(); track game.id) {
+                        <option [value]="game.name">{{ game.name }}</option>
+                      }
+                    </select>
                   </div>
                   <div>
                     <label class="block text-slate-300 text-sm font-semibold mb-2">Event Type</label>
@@ -297,6 +303,16 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                       <option value="community">Community</option>
                     </select>
                   </div>
+                </div>
+                <div>
+                  <label class="block text-slate-300 text-sm font-semibold mb-2">Entry Fee Type</label>
+                  <select
+                    formControlName="entryFeeType"
+                    class="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                  >
+                    <option value="entry_fee">Entry Fee (Pay Once)</option>
+                    <option value="pay_per_session">Pay Per Session</option>
+                  </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -316,7 +332,7 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                     />
                   </div>
                 </div>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-4 gap-4">
                   <div>
                     <label class="block text-slate-300 text-sm font-semibold mb-2">Prize Pool ($)</label>
                     <input
@@ -333,6 +349,16 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                       type="number"
                       formControlName="maxPlayers"
                       placeholder="32"
+                      class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-slate-300 text-sm font-semibold mb-2">Eligible Sessions</label>
+                    <input
+                      type="number"
+                      formControlName="eligibleSessions"
+                      placeholder="1"
+                      min="1"
                       class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                     />
                   </div>
@@ -392,6 +418,7 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                   <label class="block text-slate-300 text-sm font-semibold mb-2">Select Store</label>
                   <select
                     formControlName="storeId"
+                    (change)="onStoreSelectedEdit()"
                     class="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
                   >
                     <option value="">All Stores (Global Event)</option>
@@ -411,11 +438,15 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                 <div class="grid grid-cols-2 gap-4">
                   <div>
                     <label class="block text-slate-300 text-sm font-semibold mb-2">Game</label>
-                    <input
-                      type="text"
+                    <select
                       formControlName="game"
-                      class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
-                    />
+                      class="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                    >
+                      <option value="">Select a game</option>
+                      @for (game of games(); track game.id) {
+                        <option [value]="game.name">{{ game.name }}</option>
+                      }
+                    </select>
                   </div>
                   <div>
                     <label class="block text-slate-300 text-sm font-semibold mb-2">Event Type</label>
@@ -429,6 +460,16 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                       <option value="community">Community</option>
                     </select>
                   </div>
+                </div>
+                <div>
+                  <label class="block text-slate-300 text-sm font-semibold mb-2">Entry Fee Type</label>
+                  <select
+                    formControlName="entryFeeType"
+                    class="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50"
+                  >
+                    <option value="entry_fee">Entry Fee (Pay Once)</option>
+                    <option value="pay_per_session">Pay Per Session</option>
+                  </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                   <div>
@@ -448,7 +489,7 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                     />
                   </div>
                 </div>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-4 gap-4">
                   <div>
                     <label class="block text-slate-300 text-sm font-semibold mb-2">Prize Pool ($)</label>
                     <input
@@ -463,6 +504,15 @@ type StatusFilter = 'all' | 'upcoming' | 'live' | 'completed' | 'cancelled';
                     <input
                       type="number"
                       formControlName="maxPlayers"
+                      class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-slate-300 text-sm font-semibold mb-2">Eligible Sessions</label>
+                    <input
+                      type="number"
+                      formControlName="eligibleSessions"
+                      min="1"
                       class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
                     />
                   </div>
@@ -687,6 +737,7 @@ export class EventsComponent implements OnInit {
   events = signal<Event[]>([]);
   eventResults = signal<EventResult[]>([]);
   availableUsers = signal<User[]>([]);
+  games = signal<{ id: string; name: string }[]>([]);
   activeStatusFilter = signal<StatusFilter>('all');
   selectedEventForResults = signal<Event | null>(null);
 
@@ -712,6 +763,8 @@ export class EventsComponent implements OnInit {
       title: ['', [Validators.required, Validators.minLength(2)]],
       game: [''],
       eventType: ['tournament'],
+      entryFeeType: ['entry_fee'],
+      eligibleSessions: [1, Validators.required],
       startDate: ['', Validators.required],
       endDate: [''],
       prizePool: [''],
@@ -725,6 +778,8 @@ export class EventsComponent implements OnInit {
       title: ['', [Validators.required, Validators.minLength(2)]],
       game: [''],
       eventType: ['tournament'],
+      entryFeeType: ['entry_fee'],
+      eligibleSessions: [1, Validators.required],
       startDate: ['', Validators.required],
       endDate: [''],
       prizePool: [''],
@@ -748,6 +803,33 @@ export class EventsComponent implements OnInit {
   ngOnInit(): void {
     this.loadStores();
     this.loadEvents();
+
+    effect(() => {
+      const stores = this.stores();
+      if (stores.length > 0) {
+        this.loadGames();
+      }
+    });
+  }
+
+  onStoreSelected(): void {
+    const storeId = this.eventForm.get('storeId')?.value;
+    console.log('Store selected:', storeId);
+    if (storeId) {
+      this.loadGamesByStore(storeId);
+    } else {
+      this.games.set([]);
+    }
+  }
+
+  onStoreSelectedEdit(): void {
+    const storeId = this.editForm.get('storeId')?.value;
+    console.log('Store selected (edit):', storeId);
+    if (storeId) {
+      this.loadGamesByStore(storeId);
+    } else {
+      this.games.set([]);
+    }
   }
 
   getStoreName(storeId: string): string {
@@ -761,6 +843,17 @@ export class EventsComponent implements OnInit {
       return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
     } catch {
       return dateString;
+    }
+  }
+
+  formatEntryFeeType(type: string): string {
+    switch (type) {
+      case 'entry_fee':
+        return 'Entry Fee';
+      case 'pay_per_session':
+        return 'Pay Per Session';
+      default:
+        return type;
     }
   }
 
@@ -796,6 +889,8 @@ export class EventsComponent implements OnInit {
       title: formValue.title,
       game: formValue.game || undefined,
       eventType: formValue.eventType,
+      entryFeeType: formValue.entryFeeType,
+      eligibleSessions: formValue.eligibleSessions ? parseInt(formValue.eligibleSessions) : 1,
       startDate: formValue.startDate,
       endDate: formValue.endDate || undefined,
       prizePool: formValue.prizePool ? parseFloat(formValue.prizePool).toString() : undefined,
@@ -830,6 +925,8 @@ export class EventsComponent implements OnInit {
       title: event.title,
       game: event.game || '',
       eventType: event.eventType,
+      entryFeeType: event.entryFeeType,
+      eligibleSessions: event.eligibleSessions || 1,
       startDate: this.toDateTimeLocal(event.startDate),
       endDate: event.endDate ? this.toDateTimeLocal(event.endDate) : '',
       prizePool: event.prizePool || '',
@@ -855,6 +952,8 @@ export class EventsComponent implements OnInit {
       title: formValue.title,
       game: formValue.game || undefined,
       eventType: formValue.eventType,
+      entryFeeType: formValue.entryFeeType,
+      eligibleSessions: formValue.eligibleSessions ? parseInt(formValue.eligibleSessions) : 1,
       startDate: formValue.startDate,
       endDate: formValue.endDate || undefined,
       prizePool: formValue.prizePool ? parseFloat(formValue.prizePool).toString() : undefined,
@@ -964,6 +1063,38 @@ export class EventsComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to load stores:', err);
+        },
+      });
+  }
+
+  private loadGames(): void {
+    const storeId = this.stores()[0]?.id;
+    if (!storeId) {
+      console.warn('No store available to load games');
+      return;
+    }
+    this.loadGamesByStore(storeId);
+  }
+
+  private loadGamesByStore(storeId: string): void {
+    if (!storeId) {
+      this.games.set([]);
+      return;
+    }
+
+    console.log('Loading games for store:', storeId);
+    this.http
+      .get<{ data: { id: string; name: string }[] }>(
+        `${environment.apiUrl}/api/gaming-sessions/games/${storeId}`,
+      )
+      .subscribe({
+        next: (response) => {
+          console.log('Games loaded:', response.data);
+          this.games.set(response.data || []);
+        },
+        error: (err) => {
+          console.error('Failed to load games:', err);
+          this.games.set([]);
         },
       });
   }

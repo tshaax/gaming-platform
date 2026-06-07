@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { AuthService } from '@org/fe/auth';
 import { environment } from '../../environments/environment';
 import { OcrCaptureDialogComponent, CaptureResult } from './ocr-capture-dialog.component';
 
@@ -15,6 +16,7 @@ interface ActiveSession {
   startedAt: Date;
   durationMins: number;
   ratePerHour: string;
+  eventId?: string;
   timeLeft?: string;
 }
 
@@ -30,6 +32,21 @@ interface Game {
   name: string;
   thumbnail?: string;
   isActive: boolean;
+}
+
+interface EventRegistration {
+  id: string;
+  eventId: string;
+  gamerId: string;
+  totalEligibleSessions: number;
+  usedSessions: number;
+  status: string;
+  currentRound?: string;
+  isEliminated?: boolean;
+  updatedAt?: string;
+  eventTitle?: string;
+  entryFeeType?: string;
+  eventGame?: string;
 }
 
 @Component({
@@ -53,14 +70,74 @@ interface Game {
               <p class="text-purple-200 text-sm">Station: {{ session()?.stationName }}</p>
             </div>
           </div>
-          <button
-            (click)="logout()"
-            class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-          >
-            Logout
-          </button>
+          <div class="flex items-center gap-3">
+            <button
+              (click)="viewPlayHistory()"
+              class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              📊 Play History
+            </button>
+            <button
+              (click)="endSession()"
+              class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+            >
+              ⏹️ End Session
+            </button>
+            <button
+              (click)="logout()"
+              class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
+
+      <!-- Event or Normal Session Dialog -->
+      @if (showEventOrNormalSessionDialog()) {
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 w-full max-w-md">
+            <div class="p-6 border-b border-white/10">
+              <h2 class="text-2xl font-bold text-white">🎮 How to Play?</h2>
+              <p class="text-slate-400 text-sm mt-2">You have reserved event sessions. What would you like to do?</p>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <!-- Play Event Option -->
+              @for (event of playerReservedEvents(); track event.id) {
+                <button
+                  (click)="chooseEventSession(event)"
+                  type="button"
+                  class="w-full p-4 bg-gradient-to-r from-purple-600/30 to-purple-700/30 hover:from-purple-600/50 hover:to-purple-700/50 border border-purple-400/50 rounded-lg transition-all text-left"
+                >
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-white font-bold">🏆 {{ event.eventTitle }}</p>
+                      <p class="text-purple-300 text-sm">Sessions: <span class="text-green-400 font-bold">{{ (event.totalEligibleSessions - event.usedSessions) }}</span> / {{ event.totalEligibleSessions }}</p>
+                    </div>
+                    <span class="text-2xl">→</span>
+                  </div>
+                </button>
+              }
+
+              <!-- Play Normal Session Option -->
+              <button
+                (click)="chooseNormalSession()"
+                type="button"
+                class="w-full p-4 bg-gradient-to-r from-cyan-600/30 to-cyan-700/30 hover:from-cyan-600/50 hover:to-cyan-700/50 border border-cyan-400/50 rounded-lg transition-all"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="text-left">
+                    <p class="text-white font-bold">🎮 Normal Session</p>
+                    <p class="text-cyan-300 text-sm">Play without using reserved events</p>
+                  </div>
+                  <span class="text-2xl">→</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <!-- Active Session Card -->
@@ -69,7 +146,7 @@ interface Game {
             <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p class="text-cyan-200 text-sm mb-1">Started</p>
-                <p class="text-white text-lg font-semibold">{{ session()?.startedAt | date: 'short' }}</p>
+                <p class="text-white text-lg font-semibold">{{ session()?.startedAt | date: 'yyyy/MM/dd HH:mm' }}</p>
               </div>
               <div>
                 <p class="text-cyan-200 text-sm mb-1">Time Left</p>
@@ -236,6 +313,7 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
   private apiUrl = environment.apiUrl;
 
   session = signal<ActiveSession | null>(null);
@@ -244,6 +322,10 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
   isSavingDetails = signal(false);
   showOcrDialog = signal(false);
   isSubmitting = signal(false);
+  showEventOrNormalSessionDialog = signal(false);
+  playerReservedEvents = signal<EventRegistration[]>([]);
+  selectedEventForSession = signal<EventRegistration | null>(null);
+  selectedEventGame = signal<string | null>(null);
 
   gameForm: FormGroup;
   private timerInterval: any;
@@ -270,6 +352,9 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
       this.startTimer();
       this.loadOtherPlayers(sessionData.storeId);
       this.loadGames(sessionData.storeId);
+
+      // Load player's reserved events and show dialog if they have any
+      this.loadPlayerReservedEvents();
     } else {
       this.router.navigate(['/']);
     }
@@ -320,6 +405,8 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.success && response.data) {
           this.games.set(response.data.filter(g => g.isActive));
+          // Auto-select event game if one was previously selected
+          this.autoSelectEventGame();
         }
       },
       error: (err) => {
@@ -372,11 +459,7 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
     const payload = {
       game: result.game,
       score: result.score,
-      placement: result.placement,
       result: result.result,
-      kills: result.kills,
-      deaths: result.deaths,
-      assists: result.assists,
     };
 
     this.http.post(
@@ -384,9 +467,13 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
       payload
     ).subscribe({
       next: () => {
-        this.isSubmitting.set(false);
-        this.showOcrDialog.set(false);
-        this.gameForm.reset({ opponentType: 'cpu' });
+        // If this was an event session, mark the session as used
+        const eventRegistration = this.selectedEventForSession();
+        if (eventRegistration) {
+          this.markEventSessionAsUsed(eventRegistration.id);
+        } else {
+          this.continueSession();
+        }
       },
       error: (err) => {
         console.error('Failed to submit results:', err);
@@ -395,11 +482,135 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
     });
   }
 
+  private markEventSessionAsUsed(registrationId: string): void {
+    this.http.post(
+      `${this.apiUrl}/api/events/registrations/${registrationId}/use-session`,
+      {}
+    ).subscribe({
+      next: () => {
+        this.continueSession();
+      },
+      error: (err) => {
+        console.error('Failed to mark event session as used:', err);
+        // Still continue the session even if marking as used fails
+        this.continueSession();
+      },
+    });
+  }
+
+  private continueSession(): void {
+    this.isSubmitting.set(false);
+    this.showOcrDialog.set(false);
+    this.gameForm.reset({ opponentType: 'cpu' });
+    // Keep the player in the session to allow playing more games
+  }
+
+  private loadPlayerReservedEvents(): void {
+    const sessionEventId = this.session()?.eventId;
+
+    // Only show event dialog if the session was created with an event
+    if (!sessionEventId) {
+      return;
+    }
+
+    const playerId = this.authService.userId();
+
+    if (!playerId) {
+      console.warn('Player ID not available');
+      return;
+    }
+
+    const url = `${this.apiUrl}/api/events/player/${playerId}/registrations`;
+    console.log('Loading player reserved events:', url);
+
+    this.http.get<{ data: EventRegistration[] }>(url).subscribe({
+      next: (response) => {
+        console.log('Player event registrations loaded:', response.data);
+        // Filter for active registrations with remaining sessions
+        const active = (response.data || []).filter(
+          reg => reg.status === 'active' && (reg.totalEligibleSessions - reg.usedSessions) > 0
+        );
+        this.playerReservedEvents.set(active);
+
+        // Show event selection dialog if player has reserved events and session is linked to an event
+        if (active.length > 0) {
+          this.showEventOrNormalSessionDialog.set(true);
+        }
+      },
+      error: (err) => {
+        console.log('No reserved events found:', err.status);
+        this.playerReservedEvents.set([]);
+      },
+    });
+  }
+
+  chooseEventSession(event: EventRegistration): void {
+    // Player chose to play an event session
+    this.selectedEventForSession.set(event);
+    this.selectedEventGame.set(event.eventGame || null);
+    this.showEventOrNormalSessionDialog.set(false);
+    console.log('Player chose to play event session:', event.eventTitle, 'Game:', event.eventGame);
+
+    // Auto-select the game if it's available
+    this.autoSelectEventGame();
+  }
+
+  private autoSelectEventGame(): void {
+    const eventGame = this.selectedEventGame();
+    if (!eventGame) return;
+
+    const matchingGame = this.games().find(g => g.name === eventGame);
+    if (matchingGame) {
+      this.gameForm.patchValue({ gameId: matchingGame.id });
+      console.log('Auto-selected game:', matchingGame.name);
+    }
+  }
+
+  chooseNormalSession(): void {
+    // Player chose to play a normal session
+    this.selectedEventForSession.set(null);
+    this.selectedEventGame.set(null);
+    this.playerReservedEvents.set([]);
+    this.showEventOrNormalSessionDialog.set(false);
+    this.gameForm.patchValue({ gameId: '' });
+    console.log('Player chose to play a normal session');
+  }
+
+  endSession(): void {
+    if (!this.session()) return;
+
+    this.isSavingDetails.set(true);
+    this.http.put(
+      `${this.apiUrl}/api/gaming-sessions/${this.session()!.id}/end`,
+      {}
+    ).subscribe({
+      next: () => {
+        this.isSavingDetails.set(false);
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        console.error('Failed to end session:', err);
+        this.isSavingDetails.set(false);
+      },
+    });
+  }
+
   goBack(): void {
     this.router.navigate(['/']);
   }
 
+  viewPlayHistory(): void {
+    this.router.navigate(['/history']);
+  }
+
   logout(): void {
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        console.error('Logout failed');
+      },
+    });
   }
 }

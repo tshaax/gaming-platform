@@ -150,6 +150,7 @@ export const gamingSessions = pgTable(
     storeId:        uuid('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
     userId:         uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     stationId:      uuid('station_id').notNull().references(() => gamingStations.id, { onDelete: 'restrict' }),
+    eventId:        uuid('event_id').references(() => events.id, { onDelete: 'set null' }),
     durationMins:   integer('duration_mins').notNull(),
     ratePerHour:    numeric('rate_per_hour', { precision: 10, scale: 2 }).notNull(),
     opponentType:   varchar('opponent_type', { length: 50 }),
@@ -168,6 +169,7 @@ export const gamingSessions = pgTable(
     index('idx_gaming_sessions_station_id').on(table.stationId),
     index('idx_gaming_sessions_status').on(table.status),
     index('idx_gaming_sessions_opponent_user_id').on(table.opponentUserId),
+    index('idx_gaming_sessions_event_id').on(table.eventId),
   ],
 );
 
@@ -179,6 +181,8 @@ export const events = pgTable(
     title:          varchar('title', { length: 255 }).notNull(),
     game:           varchar('game', { length: 255 }),
     eventType:      varchar('event_type', { length: 50 }).notNull().default('tournament'),
+    entryFeeType:   varchar('entry_fee_type', { length: 50 }).notNull().default('entry_fee'),
+    eligibleSessions: integer('eligible_sessions').notNull().default(1),
     startDate:      tstz('start_date').notNull(),
     endDate:        tstz('end_date'),
     prizePool:      numeric('prize_pool', { precision: 10, scale: 2 }),
@@ -289,5 +293,57 @@ export const gameSessionResults = pgTable(
   },
   (table) => [
     index('idx_game_session_results_session_id').on(table.sessionId),
+  ],
+);
+
+export const eventRegistrations = pgTable(
+  'event_registrations',
+  {
+    id:                    uuid('id').primaryKey().defaultRandom(),
+    eventId:               uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+    gamerId:               uuid('gamer_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    totalEligibleSessions: integer('total_eligible_sessions').notNull().default(1),
+    usedSessions:          integer('used_sessions').notNull().default(0),
+    status:                varchar('status', { length: 50 }).notNull().default('active'),
+    currentRound:          varchar('current_round', { length: 50 }),
+    isEliminated:          boolean('is_eliminated').notNull().default(false),
+    createdAt:             tstz('created_at').notNull().defaultNow(),
+    updatedAt:             tstz('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_event_registrations_event_id').on(table.eventId),
+    index('idx_event_registrations_gamer_id').on(table.gamerId),
+  ],
+);
+
+export const sessionRecords = pgTable(
+  'session_records',
+  {
+    id:               uuid('id').primaryKey().defaultRandom(),
+    registrationId:   uuid('registration_id').notNull().references(() => eventRegistrations.id, { onDelete: 'cascade' }),
+    sessionNumber:    integer('session_number').notNull(),
+    status:           varchar('status', { length: 50 }).notNull().default('scheduled'),
+    tournamentRound:  varchar('tournament_round', { length: 50 }),
+    roundNumber:      integer('round_number'),
+    matchResult:      varchar('match_result', { length: 50 }),
+    createdAt:        tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_session_records_registration_id').on(table.registrationId),
+  ],
+);
+
+export const tournamentBrackets = pgTable(
+  'tournament_brackets',
+  {
+    id:                  uuid('id').primaryKey().defaultRandom(),
+    eventId:             uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+    roundName:           varchar('round_name', { length: 100 }).notNull(),
+    roundNumber:         integer('round_number').notNull(),
+    sessionRequirement:  integer('session_requirement').notNull().default(1),
+    createdAt:           tstz('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_tournament_brackets_event_id').on(table.eventId),
   ],
 );

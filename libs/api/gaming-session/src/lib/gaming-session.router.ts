@@ -9,6 +9,7 @@ interface CreateSessionRequest {
   durationMins: number;
   ratePerHour: string;
   opponentType?: string;
+  eventId?: string;
   notes?: string;
 }
 
@@ -80,6 +81,7 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           durationMins: input.durationMins,
           ratePerHour: input.ratePerHour,
           opponentType: input.opponentType,
+          eventId: input.eventId,
           notes: input.notes,
         });
 
@@ -188,9 +190,42 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     },
   );
 
-  // Submit result and end session
+  // Submit result without ending session (allows multiple games per session)
   router.post(
     '/:sessionId/results',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { sessionId } = req.params;
+        const input = req.body as SubmitResultRequest;
+
+        // Create result record
+        const result = await gamingSessionService.createSessionResult(sessionId, {
+          game: input.game,
+          score: input.score,
+          placement: input.placement,
+          result: input.result,
+          kills: input.kills,
+          deaths: input.deaths,
+          assists: input.assists,
+        });
+
+        const body: ApiResponse<typeof result> = { data: result, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to submit result',
+        });
+      }
+    },
+  );
+
+  // End session manually
+  router.post(
+    '/:sessionId/end-and-submit-results',
     authenticate,
     async (req: Request, res: Response) => {
       try {
@@ -219,6 +254,59 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           data: null,
           success: false,
           error: error.message || 'Failed to submit result',
+        });
+      }
+    },
+  );
+
+  // Get session result
+  router.get(
+    '/:sessionId/results',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { sessionId } = req.params;
+        const result = await gamingSessionService.getSessionResult(sessionId);
+        const body: ApiResponse<typeof result> = { data: result, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to fetch session result',
+        });
+      }
+    },
+  );
+
+  // Update session result
+  router.put(
+    '/results/:resultId',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { resultId } = req.params;
+        const input = req.body as SubmitResultRequest;
+
+        const updated = await gamingSessionService.updateSessionResult(resultId, {
+          game: input.game,
+          score: input.score,
+          placement: input.placement,
+          result: input.result,
+          kills: input.kills,
+          deaths: input.deaths,
+          assists: input.assists,
+        });
+
+        const body: ApiResponse<typeof updated> = { data: updated, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to update session result',
         });
       }
     },

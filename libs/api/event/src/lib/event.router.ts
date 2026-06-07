@@ -8,6 +8,8 @@ const createEventSchema = z.object({
   title: z.string().min(2),
   game: z.string().optional(),
   eventType: z.string().optional(),
+  entryFeeType: z.string().optional(),
+  eligibleSessions: z.number().optional(),
   startDate: z.string(),
   endDate: z.string().optional(),
   prizePool: z.string().optional(),
@@ -20,6 +22,8 @@ const updateEventSchema = z.object({
   title: z.string().min(2).optional(),
   game: z.string().optional(),
   eventType: z.string().optional(),
+  entryFeeType: z.string().optional(),
+  eligibleSessions: z.number().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   prizePool: z.string().optional(),
@@ -38,6 +42,26 @@ const createEventResultSchema = z.object({
   kills: z.number().optional(),
   deaths: z.number().optional(),
   assists: z.number().optional(),
+});
+
+const registerForEventSchema = z.object({
+  gamerId: z.string(),
+  totalEligibleSessions: z.number().optional(),
+});
+
+const createTournamentBracketSchema = z.object({
+  roundName: z.string(),
+  roundNumber: z.number(),
+  sessionRequirement: z.number().optional(),
+});
+
+const updateGamerTournamentStatusSchema = z.object({
+  currentRound: z.string(),
+  matchResult: z.enum(['win', 'loss']),
+});
+
+const canAdvanceSchema = z.object({
+  nextRoundNumber: z.number(),
 });
 
 export function createEventRouter(eventService: EventService): Router {
@@ -161,6 +185,158 @@ export function createEventRouter(eventService: EventService): Router {
           success: true,
           message: 'Event result deleted successfully',
         };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Register gamer for event
+  router.post(
+    '/:id/register',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const input = registerForEventSchema.parse(req.body);
+        const registration = await eventService.registerForEvent(req.params.id, input);
+        const body: ApiResponse<typeof registration> = { data: registration, success: true };
+        res.status(201).json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Get registration details
+  router.get(
+    '/:eventId/registration/:gamerId',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const registration = await eventService.getRegistration(
+          req.params.eventId,
+          req.params.gamerId
+        );
+        const body: ApiResponse<typeof registration> = { data: registration, success: true };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Use a session from registration
+  router.post(
+    '/registrations/:registrationId/use-session',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const result = await eventService.useSession(req.params.registrationId);
+        const body: ApiResponse<typeof result> = { data: result, success: true };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Create tournament bracket - admin only
+  router.post(
+    '/:eventId/tournament-brackets',
+    authenticate,
+    requireRole('admin'),
+    async (req: Request, res: Response) => {
+      try {
+        const input = createTournamentBracketSchema.parse(req.body);
+        const bracket = await eventService.createTournamentBracket(req.params.eventId, input);
+        const body: ApiResponse<typeof bracket> = { data: bracket, success: true };
+        res.status(201).json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Get tournament brackets
+  router.get(
+    '/:eventId/tournament-brackets',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const brackets = await eventService.getTournamentBrackets(req.params.eventId);
+        const body: ApiResponse<typeof brackets> = { data: brackets, success: true };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Update gamer tournament status
+  router.post(
+    '/registrations/:registrationId/tournament-status',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const input = updateGamerTournamentStatusSchema.parse(req.body);
+        const updated = await eventService.updateGamerTournamentStatus(
+          req.params.registrationId,
+          input
+        );
+        const body: ApiResponse<typeof updated> = { data: updated, success: true };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Check if gamer can advance
+  router.post(
+    '/:eventId/registrations/:registrationId/can-advance',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const input = canAdvanceSchema.parse(req.body);
+        const result = await eventService.canAdvanceInTournament(
+          req.params.registrationId,
+          req.params.eventId,
+          input.nextRoundNumber
+        );
+        const body: ApiResponse<typeof result> = { data: result, success: true };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Get player's event registrations with event details
+  router.get(
+    '/player/:playerId/registrations',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const registrations = await eventService.getPlayerEventRegistrations(
+          req.params.playerId
+        );
+        const body: ApiResponse<typeof registrations> = { data: registrations, success: true };
+        res.json(body);
+      } catch (err) {
+        handleError(err, res);
+      }
+    },
+  );
+
+  // Get event leaderboard
+  router.get(
+    '/:eventId/leaderboard',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const leaderboard = await eventService.getEventLeaderboard(req.params.eventId);
+        const body: ApiResponse<typeof leaderboard> = { data: leaderboard, success: true };
         res.json(body);
       } catch (err) {
         handleError(err, res);

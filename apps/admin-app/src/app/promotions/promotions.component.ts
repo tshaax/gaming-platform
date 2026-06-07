@@ -182,7 +182,7 @@ interface Store {
                 </div>
                 <div class="flex items-center gap-2">
                   <span>⏰</span>
-                  <span class="text-gray-400">Ends {{ promo.endDate | date: 'M/d/yyyy' }}</span>
+                  <span class="text-gray-400">Ends {{ promo.endDate | date: 'yyyy/MM/dd HH:mm' }}</span>
                 </div>
               </div>
 

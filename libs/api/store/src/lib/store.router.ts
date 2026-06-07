@@ -98,6 +98,17 @@ export function createStoreRouter(storeService: StoreService): Router {
     }
   });
 
+  // Get pricing options for a store
+  router.get('/:storeId/pricing-options', authenticate, async (req: Request, res: Response) => {
+    try {
+      const pricingOptions = await storeService.getPricingOptions(req.params.storeId);
+      const body: ApiResponse<typeof pricingOptions> = { data: pricingOptions, success: true };
+      res.json(body);
+    } catch (err) {
+      handleError(err, res);
+    }
+  });
+
   return router;
 }
 

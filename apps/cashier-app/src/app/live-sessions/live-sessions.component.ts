@@ -20,6 +20,20 @@ interface GamingSession {
   endedAt?: string;
 }
 
+interface User {
+  id: string;
+  email?: string;
+  cellphone?: string;
+}
+
+interface PricingOption {
+  id: string;
+  durationMins: number;
+  ratePerHour: string;
+  label?: string;
+  isActive: boolean;
+}
+
 interface SessionWithDetails extends GamingSession {
   playerName?: string;
   stationName?: string;
@@ -67,7 +81,7 @@ interface SessionWithDetails extends GamingSession {
                     <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
                     <span class="text-green-400 font-semibold text-sm">LIVE</span>
                   </div>
-                  <span class="text-white font-bold text-lg">{{ session.cost | currency }}</span>
+                  <span class="text-white font-bold text-lg">{{ (session.cost | number: '1.2-2') }}</span>
                 </div>
 
                 <!-- Session Info -->
@@ -154,10 +168,13 @@ export class LiveSessionsComponent implements OnInit {
   showCaptureDialog = signal(false);
   private currentSessionId = signal<string | null>(null);
   private stationMap = signal<Map<string, string>>(new Map());
+  private userMap = signal<Map<string, User>>(new Map());
+  private pricingOptions = signal<PricingOption[]>([]);
   private timeoutAlertService = inject(TimeoutAlertService);
 
   ngOnInit(): void {
     this.loadStations();
+    this.loadPricingOptions();
     this.loadActiveSessions();
     setInterval(() => this.loadActiveSessions(), 5000);
   }
@@ -178,6 +195,23 @@ export class LiveSessionsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load gaming stations:', err);
+      },
+    });
+  }
+
+  private loadPricingOptions(): void {
+    const storeId = this.authService.storeId();
+    if (!storeId) {
+      return;
+    }
+
+    this.http.get<{ data: PricingOption[] }>(`${this.apiUrl}/api/stores/${storeId}/pricing-options`).subscribe({
+      next: (response) => {
+        console.log('Pricing options loaded:', response.data);
+        this.pricingOptions.set(response.data || []);
+      },
+      error: (err) => {
+        console.error('Failed to load pricing options:', err);
       },
     });
   }
@@ -205,14 +239,48 @@ export class LiveSessionsComponent implements OnInit {
     const elapsedMinutes = Math.floor((now.getTime() - startedAt.getTime()) / 60000);
     const remainingMinutes = Math.max(0, session.durationMins - elapsedMinutes);
 
-    const cost = (parseFloat(session.ratePerHour) / 60) * session.durationMins;
+    // Get rate from configured pricing options for this duration
+    const pricingOptions = this.pricingOptions();
+    console.log('Available pricing options:', pricingOptions);
+    console.log('Session duration:', session.durationMins);
+
+    const pricingOption = pricingOptions.find(p => p.isActive && p.durationMins === session.durationMins);
+    console.log('Matching pricing option:', pricingOption);
+
+    const ratePerHour = pricingOption ? parseFloat(pricingOption.ratePerHour) : parseFloat(session.ratePerHour);
+    console.log('Rate per hour:', ratePerHour);
+
+    const cost = ratePerHour;
+    console.log('Cost:', cost);
+
     const stationName = this.stationMap().get(session.stationId) || 'Unknown Station';
+
+    // Get player name from user cache, or fetch if not available
+    let playerName = 'Loading...';
+    const cachedUser = this.userMap().get(session.userId);
+    if (cachedUser) {
+      playerName = cachedUser.email || cachedUser.cellphone || 'Player';
+    } else {
+      // Fetch user info
+      this.http.get<{ data: User }>(`${this.apiUrl}/api/players/${session.userId}`).subscribe({
+        next: (response) => {
+          const userMap = this.userMap();
+          userMap.set(session.userId, response.data);
+          this.userMap.set(userMap);
+          // Update the session with new player name
+          this.loadActiveSessions();
+        },
+        error: (err) => {
+          console.error('Failed to load user:', err);
+        },
+      });
+    }
 
     return {
       ...session,
       cost,
       timeLeft: `${remainingMinutes} min`,
-      playerName: 'CrystalWolf',
+      playerName,
       stationName,
     };
   }

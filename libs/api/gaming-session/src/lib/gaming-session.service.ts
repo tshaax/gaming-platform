@@ -20,6 +20,7 @@ interface CreateGamingSessionInput {
   durationMins: number;
   ratePerHour: string;
   opponentType?: string;
+  eventId?: string;
   notes?: string;
 }
 
@@ -28,6 +29,7 @@ interface GamingSession {
   storeId: string;
   userId: string;
   stationId: string;
+  eventId?: string;
   durationMins: number;
   ratePerHour: string;
   opponentType?: string;
@@ -103,6 +105,7 @@ interface ActiveSessionData {
   notes?: string;
   game?: string;
   startedAt: Date;
+  eventId?: string;
 }
 
 export class GamingSessionService {
@@ -123,6 +126,7 @@ export class GamingSessionService {
         storeId: input.storeId,
         userId: input.userId,
         stationId: input.stationId,
+        eventId: input.eventId || null,
         durationMins: input.durationMins,
         ratePerHour: rate,
         opponentType: input.opponentType,
@@ -141,10 +145,35 @@ export class GamingSessionService {
       .where(eq(gamingSessions.storeId, storeId));
   }
 
-  async getGamingSessionsByUser(userId: string, storeId: string): Promise<GamingSession[]> {
+  async getGamingSessionsByUser(userId: string, storeId: string): Promise<any[]> {
     return this.db
-      .select()
+      .select({
+        id: gamingSessions.id,
+        storeId: gamingSessions.storeId,
+        userId: gamingSessions.userId,
+        stationId: gamingSessions.stationId,
+        eventId: gamingSessions.eventId,
+        durationMins: gamingSessions.durationMins,
+        ratePerHour: gamingSessions.ratePerHour,
+        opponentType: gamingSessions.opponentType,
+        opponentUserId: gamingSessions.opponentUserId,
+        game: gamingSessions.game,
+        notes: gamingSessions.notes,
+        status: gamingSessions.status,
+        startedAt: gamingSessions.startedAt,
+        endedAt: gamingSessions.endedAt,
+        createdAt: gamingSessions.createdAt,
+        updatedAt: gamingSessions.updatedAt,
+        resultId: gameSessionResults.id,
+        result: gameSessionResults.result,
+        score: gameSessionResults.score,
+        placement: gameSessionResults.placement,
+        kills: gameSessionResults.kills,
+        deaths: gameSessionResults.deaths,
+        assists: gameSessionResults.assists,
+      })
       .from(gamingSessions)
+      .leftJoin(gameSessionResults, eq(gamingSessions.id, gameSessionResults.sessionId))
       .where(
         and(
           eq(gamingSessions.userId, userId),
@@ -289,6 +318,7 @@ export class GamingSessionService {
         notes: gamingSessions.notes,
         game: gamingSessions.game,
         startedAt: gamingSessions.startedAt,
+        eventId: gamingSessions.eventId,
       })
       .from(gamingSessions)
       .innerJoin(stores, eq(gamingSessions.storeId, stores.id))
@@ -337,6 +367,35 @@ export class GamingSessionService {
     return result;
   }
 
+  async getSessionResult(sessionId: string): Promise<unknown> {
+    const [result] = await this.db
+      .select()
+      .from(gameSessionResults)
+      .where(eq(gameSessionResults.sessionId, sessionId))
+      .limit(1);
+
+    return result || null;
+  }
+
+  async updateSessionResult(resultId: string, data: ResultInput): Promise<unknown> {
+    const updateData: any = {};
+    if (data.game !== undefined) updateData.game = data.game;
+    if (data.score !== undefined) updateData.score = data.score;
+    if (data.placement !== undefined) updateData.placement = data.placement;
+    if (data.result !== undefined) updateData.result = data.result;
+    if (data.kills !== undefined) updateData.kills = data.kills;
+    if (data.deaths !== undefined) updateData.deaths = data.deaths;
+    if (data.assists !== undefined) updateData.assists = data.assists;
+
+    const [updated] = await this.db
+      .update(gameSessionResults)
+      .set(updateData)
+      .where(eq(gameSessionResults.id, resultId))
+      .returning();
+
+    return updated || null;
+  }
+
   async getPricingOptionsByStore(storeId: string): Promise<PricingOption[]> {
     return this.db
       .select()
@@ -371,7 +430,7 @@ export class GamingSessionService {
     return this.db
       .select()
       .from(games)
-      .where(eq(games.storeId, storeId));
+      .where(and(eq(games.storeId, storeId), eq(games.isActive, true)));
   }
 
   async createGame(
