@@ -157,6 +157,26 @@ async function seed() {
       console.log(`✓ Game available: ${game.name}`);
     }
 
+    // Create pricing options for the store
+    const pricingTable = require('./schema').pricingOptions;
+    const samplePricing = [
+      { durationMins: 30, ratePerHour: '2.50', label: '30 min', isActive: true },
+      { durationMins: 60, ratePerHour: '4.50', label: '1 hour', isActive: true },
+      { durationMins: 120, ratePerHour: '8.00', label: '2 hours', isActive: true },
+      { durationMins: 180, ratePerHour: '11.00', label: '3 hours', isActive: true },
+    ];
+
+    for (const pricing of samplePricing) {
+      await db
+        .insert(pricingTable)
+        .values({
+          storeId,
+          ...pricing,
+        })
+        .onConflictDoNothing();
+      console.log(`✓ Pricing configured: ${pricing.label} @ €${pricing.ratePerHour}/hour`);
+    }
+
     console.log('\n✅ Seed completed successfully!\n');
     console.log('Test Accounts:');
     console.log('─'.repeat(80));

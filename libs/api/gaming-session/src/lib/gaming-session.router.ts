@@ -55,6 +55,15 @@ interface SubmitResultRequest {
   kills?: number;
   deaths?: number;
   assists?: number;
+  gameType?: 'solo' | 'vs';
+  opponentUserId?: string;
+  player1Score?: number;
+  player2Score?: number;
+  winner?: string;
+}
+
+interface ExtendSessionRequest {
+  additionalMins: number;
 }
 
 export function createGamingSessionRouter(gamingSessionService: GamingSessionService): Router {
@@ -333,6 +342,38 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     },
   );
 
+  // Extend gaming session with additional time
+  router.post(
+    '/:sessionId/extend',
+    authenticate,
+    async (req: Request, res: Response) => {
+      try {
+        const { sessionId } = req.params;
+        const input = req.body as ExtendSessionRequest;
+
+        if (!input.additionalMins || input.additionalMins <= 0) {
+          res.status(400).json({
+            data: null,
+            success: false,
+            error: 'additionalMins must be a positive number',
+          });
+          return;
+        }
+
+        const session = await gamingSessionService.extendGamingSession(sessionId, input.additionalMins);
+        const body: ApiResponse<typeof session> = { data: session, success: true };
+        res.json(body);
+      } catch (err: unknown) {
+        const error = err as Error;
+        res.status(500).json({
+          data: null,
+          success: false,
+          error: error.message || 'Failed to extend gaming session',
+        });
+      }
+    },
+  );
+
   // Gaming stations endpoints
   router.get(
     '/stations/:storeId',
@@ -407,15 +448,25 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     },
   );
 
-  // Duration options endpoints
+  // Duration options endpoints - now uses pricing options as single source of truth
   router.get(
     '/durations/:storeId',
     authenticate,
     async (req: Request, res: Response) => {
       try {
         const { storeId } = req.params;
-        const options = await gamingSessionService.getDurationOptionsByStore(storeId);
-        const body: ApiResponse<typeof options> = { data: options, success: true };
+        // Get pricing options and map to duration format
+        // This eliminates duplication and keeps duration/rate aligned
+        const pricingOptions = await gamingSessionService.getPricingOptionsByStore(storeId);
+        const durations = pricingOptions.map((p: any) => ({
+          id: p.id,
+          minutes: p.durationMins,
+          isActive: p.isActive,
+          // Include rate info so frontend can display it if needed
+          ratePerHour: p.ratePerHour,
+          label: p.label,
+        }));
+        const body: ApiResponse<typeof durations> = { data: durations, success: true };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;

@@ -92,6 +92,11 @@ interface ResultInput {
   kills?: number;
   deaths?: number;
   assists?: number;
+  gameType?: 'solo' | 'vs';
+  opponentUserId?: string;
+  player1Score?: number;
+  player2Score?: number;
+  winner?: string;
 }
 
 interface ActiveSessionData {
@@ -188,6 +193,31 @@ export class GamingSessionService {
       .set({
         status: 'ended',
         endedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(gamingSessions.id, sessionId))
+      .returning();
+
+    return updated as GamingSession;
+  }
+
+  async extendGamingSession(sessionId: string, additionalMins: number): Promise<GamingSession> {
+    // Get current session to calculate new duration
+    const [session] = await this.db
+      .select()
+      .from(gamingSessions)
+      .where(eq(gamingSessions.id, sessionId));
+
+    if (!session) {
+      throw new Error('Gaming session not found');
+    }
+
+    const newDurationMins = session.durationMins + additionalMins;
+
+    const [updated] = await this.db
+      .update(gamingSessions)
+      .set({
+        durationMins: newDurationMins,
         updatedAt: new Date(),
       })
       .where(eq(gamingSessions.id, sessionId))
@@ -356,11 +386,16 @@ export class GamingSessionService {
         sessionId,
         game: data.game,
         score: data.score,
-        placement: data.placement,
+        placement: data.placement ?? null,
         result: data.result,
         kills: data.kills ?? 0,
         deaths: data.deaths ?? 0,
         assists: data.assists ?? 0,
+        gameType: data.gameType || 'solo',
+        opponentUserId: data.opponentUserId ?? null,
+        player1Score: data.player1Score ?? null,
+        player2Score: data.player2Score ?? null,
+        winner: data.winner ?? null,
       })
       .returning();
 
@@ -383,6 +418,11 @@ export class GamingSessionService {
     if (data.score !== undefined) updateData.score = data.score;
     if (data.placement !== undefined) updateData.placement = data.placement;
     if (data.result !== undefined) updateData.result = data.result;
+    if (data.gameType !== undefined) updateData.gameType = data.gameType;
+    if (data.opponentUserId !== undefined) updateData.opponentUserId = data.opponentUserId;
+    if (data.player1Score !== undefined) updateData.player1Score = data.player1Score;
+    if (data.player2Score !== undefined) updateData.player2Score = data.player2Score;
+    if (data.winner !== undefined) updateData.winner = data.winner;
     if (data.kills !== undefined) updateData.kills = data.kills;
     if (data.deaths !== undefined) updateData.deaths = data.deaths;
     if (data.assists !== undefined) updateData.assists = data.assists;

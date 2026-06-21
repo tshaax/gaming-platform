@@ -131,6 +131,12 @@ interface Promotion {
               <span>Live Sessions</span>
             }
           </div>
+          <div (click)="router.navigate(['/results-history'])" class="px-4 py-3 hover:bg-white/5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 cursor-pointer transition-colors">
+            <span class="text-lg">📜</span>
+            @if (sidebarOpen()) {
+              <span>Results History</span>
+            }
+          </div>
           <div (click)="router.navigate(['/reports'])" class="px-4 py-3 hover:bg-white/5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 cursor-pointer transition-colors">
             <span class="text-lg">📊</span>
             @if (sidebarOpen()) {
@@ -885,7 +891,19 @@ export class LandingComponent implements OnInit {
   durationOptions = signal<DurationOption[]>([]);
   rateOptions = signal<RateOption[]>([]);
   pricingOptions = signal<PricingOption[]>([]);
-  selectedDurationRate = signal<string | null>(null);
+  formDurationValue = signal<string>('60');
+  selectedDurationRate = computed(() => {
+    const duration = this.formDurationValue();
+    const pricing = this.pricingOptions();
+
+    if (!duration || !pricing.length) {
+      return null;
+    }
+
+    const durationMins = parseInt(duration, 10);
+    const option = pricing.find(p => p.isActive && p.durationMins === durationMins);
+    return option ? option.ratePerHour.toString() : null;
+  });
   players = signal<Player[]>([]);
   searchResults = signal<Player[]>([]);
   events = signal<Event[]>([]);
@@ -968,6 +986,14 @@ export class LandingComponent implements OnInit {
     this.loadStoreData();
     this.loadEvents();
     this.loadPromotions();
+
+    // Subscribe to form duration changes and update signal
+    // This makes the computed selectedDurationRate re-evaluate automatically
+    this.gamingSessionForm.get('duration')?.valueChanges.subscribe((value) => {
+      if (value) {
+        this.formDurationValue.set(value);
+      }
+    });
   }
 
   private loadStoreName(): void {
@@ -1229,7 +1255,6 @@ export class LandingComponent implements OnInit {
 
         // Reset form and close modal (all fields reset except keep duration default)
         this.gamingSessionForm.reset({ duration: '60', sessionType: 'gaming' });
-        this.selectedDurationRate.set(null);
         this.showGamingSessionModal.set(false);
         this.selectedLeagueData = {};
         this.selectedPromotionData = {};
@@ -1487,18 +1512,17 @@ export class LandingComponent implements OnInit {
   }
 
   onDurationSelected(event: any): void {
-    const durationMins = parseInt(event.target.value, 10);
+    const value = event.target.value;
+    if (value) {
+      this.formDurationValue.set(value);
+    }
 
-    // Find the pricing option that matches this duration and store
+    // Log warnings if no pricing is found
+    const durationMins = parseInt(value, 10);
     const pricingOption = this.pricingOptions().find(
       p => p.isActive && p.durationMins === durationMins
     );
-
-    if (pricingOption) {
-      this.selectedDurationRate.set(pricingOption.ratePerHour.toString());
-    } else {
-      // Clear rate if no pricing option found for this duration
-      this.selectedDurationRate.set(null);
+    if (!pricingOption) {
       console.warn(`No pricing configured for ${durationMins} minutes in this store`);
     }
   }

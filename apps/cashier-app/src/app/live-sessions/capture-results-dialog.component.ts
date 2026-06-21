@@ -1,15 +1,34 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 export interface CaptureResult {
   game: string;
   score: number;
-  placement: number;
   result: string;
-  kills: number;
-  deaths: number;
-  assists: number;
+  gameType?: 'solo' | 'vs';
+  opponentUserId?: string;
+  player1Score?: number;
+  player2Score?: number;
+  winner?: string;
+}
+
+interface Game {
+  id: string;
+  name: string;
+}
+
+interface Player {
+  id: string;
+  email?: string;
+  cellphone?: string;
+}
+
+interface SessionPlayer {
+  id: string;
+  email?: string;
+  cellphone?: string;
+  name?: string;
 }
 
 @Component({
@@ -34,102 +53,141 @@ export interface CaptureResult {
           </button>
         </div>
 
-        <!-- Game Info -->
-        <div class="px-6 pt-4 pb-2">
-          <p class="text-slate-400 text-sm">{{ gameName }}</p>
-        </div>
-
         <!-- Form Content -->
         <div class="px-6 py-4 space-y-4">
-          <!-- Game Name -->
+          <!-- Game Name Dropdown -->
           <div>
-            <label for="game" class="block text-sm text-slate-300 mb-2">Game Name</label>
-            <input
+            <label for="game" class="block text-sm text-slate-300 mb-2">Game</label>
+            <select
               id="game"
               [(ngModel)]="formData.game"
-              type="text"
-              placeholder="Enter game name"
-              class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
-            />
+              class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20 appearance-none"
+            >
+              <option value="">Select game...</option>
+              @for (game of games; track game.id) {
+                <option [value]="game.name">{{ game.name }}</option>
+              }
+            </select>
           </div>
 
-          <!-- Score -->
+          <!-- Game Type Toggle -->
           <div>
-            <label for="score" class="block text-sm text-slate-300 mb-2">Score</label>
-            <div class="relative">
-              <input
-                id="score"
-                [(ngModel)]="formData.score"
-                type="number"
-                class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-400/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
-              />
+            <label class="block text-sm text-slate-300 mb-2">Game Type</label>
+            <div class="flex gap-2">
               <button
-                (click)="clearScore()"
-                type="button"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                title="Clear score"
+                (click)="setGameType('solo')"
+                [class.bg-cyan-600]="gameType() === 'solo'"
+                [class.bg-slate-700/50]="gameType() !== 'solo'"
+                class="flex-1 px-4 py-2 border border-white/10 rounded-lg text-white transition-colors font-semibold"
               >
-                <span class="text-lg">⊗</span>
+                Solo
+              </button>
+              <button
+                (click)="setGameType('vs')"
+                [class.bg-cyan-600]="gameType() === 'vs'"
+                [class.bg-slate-700/50]="gameType() !== 'vs'"
+                class="flex-1 px-4 py-2 border border-white/10 rounded-lg text-white transition-colors font-semibold"
+              >
+                vs Player
               </button>
             </div>
           </div>
 
-          <!-- Placement -->
-          <div>
-            <label for="placement" class="block text-sm text-slate-300 mb-2">Placement</label>
-            <input
-              id="placement"
-              [(ngModel)]="formData.placement"
-              type="number"
-              class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
-            />
-          </div>
+          <!-- Solo Game Fields -->
+          @if (gameType() === 'solo') {
+            <!-- Score -->
+            <div>
+              <label for="score" class="block text-sm text-slate-300 mb-2">Score</label>
+              <div class="relative">
+                <input
+                  id="score"
+                  [(ngModel)]="formData.score"
+                  type="number"
+                  class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-400/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
+                />
+                <button
+                  (click)="clearScore()"
+                  type="button"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  title="Clear score"
+                >
+                  <span class="text-lg">⊗</span>
+                </button>
+              </div>
+            </div>
 
-          <!-- Result Dropdown -->
-          <div>
-            <label for="result" class="block text-sm text-slate-300 mb-2">Result</label>
-            <select
-              id="result"
-              [(ngModel)]="formData.result"
-              class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20 appearance-none"
-            >
-              <option value="">Select result...</option>
-              <option value="win">Win 🏆</option>
-              <option value="loss">Loss 😔</option>
-              <option value="draw">Draw 🤝</option>
-            </select>
-          </div>
+            <!-- Result Dropdown -->
+            <div>
+              <label for="result" class="block text-sm text-slate-300 mb-2">Result</label>
+              <select
+                id="result"
+                [(ngModel)]="formData.result"
+                class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20 appearance-none"
+              >
+                <option value="">Select result...</option>
+                <option value="win">Win 🏆</option>
+                <option value="loss">Loss 😔</option>
+                <option value="draw">Draw 🤝</option>
+              </select>
+            </div>
+          }
 
-          <!-- Stats Row -->
-          <div class="grid grid-cols-3 gap-3">
+          <!-- VS Player Fields -->
+          @if (gameType() === 'vs') {
+            <!-- Opponent Player Selection -->
             <div>
-              <label for="kills" class="block text-sm text-slate-300 mb-2">Kills</label>
+              <label for="opponent" class="block text-sm text-slate-300 mb-2">Opponent Player</label>
+              <select
+                id="opponent"
+                [(ngModel)]="formData.opponentUserId"
+                class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20 appearance-none"
+              >
+                <option value="">Select opponent...</option>
+                @for (player of players; track player.id) {
+                  <option [value]="player.id">{{ player.email || player.cellphone }}</option>
+                }
+              </select>
+            </div>
+
+            <!-- Player 1 Score -->
+            <div>
+              <label for="player1Score" class="block text-sm text-slate-300 mb-2">{{ getPlayerName() }} Score</label>
               <input
-                id="kills"
-                [(ngModel)]="formData.kills"
+                id="player1Score"
+                [(ngModel)]="formData.player1Score"
                 type="number"
-                class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-white/20"
+                placeholder="0"
+                class="w-full px-4 py-2 bg-slate-700/50 border border-cyan-400/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
               />
             </div>
+
+            <!-- Player 2 Score -->
             <div>
-              <label for="deaths" class="block text-sm text-slate-300 mb-2">Deaths</label>
+              <label for="player2Score" class="block text-sm text-slate-300 mb-2">Opponent Score</label>
               <input
-                id="deaths"
-                [(ngModel)]="formData.deaths"
+                id="player2Score"
+                [(ngModel)]="formData.player2Score"
                 type="number"
-                class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-white/20"
+                placeholder="0"
+                class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-white/20"
               />
             </div>
+
+            <!-- Winner Selection -->
             <div>
-              <label for="assists" class="block text-sm text-slate-300 mb-2">Assists</label>
-              <input
-                id="assists"
-                [(ngModel)]="formData.assists"
-                type="number"
-                class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white text-center focus:outline-none focus:border-white/20"
-              />
+              <label for="winner" class="block text-sm text-slate-300 mb-2">Result</label>
+              <select
+                id="winner"
+                [(ngModel)]="formData.winner"
+                class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20 appearance-none"
+              >
+                <option value="">Select result...</option>
+                <option value="player1">{{ getPlayerName() }} Wins 🏆</option>
+                <option value="player2">Opponent Wins 🏆</option>
+                <option value="draw">Draw 🤝</option>
+              </select>
             </div>
-          </div>
+          }
         </div>
 
         <!-- Action Buttons -->
@@ -156,22 +214,101 @@ export interface CaptureResult {
   styles: [],
 })
 export class CaptureResultsDialogComponent {
-  @Input() gameName = 'Game Name';
+  @Input() games: Game[] = [];
+  @Input() players: Player[] = [];
+  @Input() sessionPlayer?: SessionPlayer;
   @Output() save = new EventEmitter<CaptureResult>();
   @Output() closeDialog = new EventEmitter<void>();
+
+  getPlayerName(): string {
+    if (!this.sessionPlayer) return 'Player';
+    return this.sessionPlayer.email || this.sessionPlayer.cellphone || 'Player';
+  }
+
+  gameType = signal<'solo' | 'vs'>('solo');
 
   formData = {
     game: '',
     score: 0,
-    placement: 1,
     result: '',
-    kills: 0,
-    deaths: 0,
-    assists: 0,
+    gameType: 'solo' as 'solo' | 'vs',
+    opponentUserId: '',
+    player1Score: 0,
+    player2Score: 0,
+    winner: '',
   };
 
+  setGameType(type: 'solo' | 'vs'): void {
+    this.gameType.set(type);
+    this.formData.gameType = type;
+
+    // Reset form data when switching modes
+    if (type === 'solo') {
+      this.formData.opponentUserId = '';
+      this.formData.player1Score = 0;
+      this.formData.player2Score = 0;
+      this.formData.winner = '';
+      this.formData.result = ''; // Reset result for solo mode
+    } else {
+      this.formData.player1Score = 0;
+      this.formData.player2Score = 0;
+      this.formData.result = ''; // Reset result for vs mode, will use winner instead
+    }
+  }
+
   onSave(): void {
-    this.save.emit(this.formData as CaptureResult);
+    // Validate required fields
+    if (!this.formData.game) {
+      alert('Please select a game');
+      return;
+    }
+
+    if (this.gameType() === 'solo') {
+      if (!this.formData.result) {
+        alert('Please select a result (Win/Loss/Draw)');
+        return;
+      }
+
+      const result: CaptureResult = {
+        game: this.formData.game,
+        score: this.formData.score || 0,
+        result: this.formData.result,
+        gameType: 'solo',
+      };
+
+      this.save.emit(result);
+    } else {
+      // VS mode validation
+      if (!this.formData.opponentUserId) {
+        alert('Please select an opponent player');
+        return;
+      }
+      if (this.formData.player1Score === undefined || this.formData.player1Score === null) {
+        alert('Please enter your score');
+        return;
+      }
+      if (this.formData.player2Score === undefined || this.formData.player2Score === null) {
+        alert('Please enter opponent score');
+        return;
+      }
+      if (!this.formData.winner) {
+        alert('Please select a result (winner)');
+        return;
+      }
+
+      const result: CaptureResult = {
+        game: this.formData.game,
+        score: this.formData.player1Score,
+        result: this.formData.winner,
+        gameType: 'vs',
+        opponentUserId: this.formData.opponentUserId,
+        player1Score: this.formData.player1Score,
+        player2Score: this.formData.player2Score,
+        winner: this.formData.winner,
+      };
+
+      this.save.emit(result);
+    }
   }
 
   onClose(): void {
