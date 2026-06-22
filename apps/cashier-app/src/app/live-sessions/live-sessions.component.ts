@@ -327,7 +327,7 @@ export class LiveSessionsComponent implements OnInit {
   games = signal<Game[]>([]);
   durationOptions = signal<DurationOption[]>([]);
   players = signal<User[]>([]);
-  extendDurationMins = signal<string>('30');
+  extendDurationMins = signal<string>('');
   private currentSessionId = signal<string | null>(null);
   private currentSessionPlayer = signal<User | undefined>(undefined);
   private stationMap = signal<Map<string, string>>(new Map());
@@ -426,7 +426,15 @@ export class LiveSessionsComponent implements OnInit {
           const activeDurations = (response.data || []).filter(
             (d) => d.isActive,
           );
-          this.durationOptions.set(activeDurations);
+          // Remove duplicates by minutes
+          const uniqueDurations = Array.from(
+            new Map(activeDurations.map((d) => [d.minutes, d])).values()
+          );
+          this.durationOptions.set(uniqueDurations);
+          // Set default to first configured duration
+          if (uniqueDurations.length > 0) {
+            this.extendDurationMins.set(uniqueDurations[0].minutes.toString());
+          }
         },
         error: (err) => {
           console.error('Failed to load duration options:', err);

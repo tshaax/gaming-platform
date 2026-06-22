@@ -19,6 +19,7 @@ export class TimeoutAlertService {
   timeoutSessionData = signal<SessionTimeoutData | null>(null);
   private alertedSessions: Set<string> = new Set();
   private monitoringInterval: any;
+  private stationMap = new Map<string, string>();
 
   constructor(
     private http: HttpClient,
@@ -30,13 +31,37 @@ export class TimeoutAlertService {
       return;
     }
 
-    // Initial check
-    this.checkForTimeoutSessions();
-
-    // Check every 5 seconds
-    this.monitoringInterval = setInterval(() => {
+    // Load stations first
+    this.loadStations(() => {
+      // Initial check
       this.checkForTimeoutSessions();
-    }, 5000);
+
+      // Check every 5 seconds
+      this.monitoringInterval = setInterval(() => {
+        this.checkForTimeoutSessions();
+      }, 5000);
+    });
+  }
+
+  private loadStations(callback: () => void): void {
+    const storeId = this.authService.storeId();
+    if (!storeId) {
+      callback();
+      return;
+    }
+
+    const apiUrl = environment.apiUrl;
+    this.http.get<{ data: any[] }>(`${apiUrl}/api/gaming-sessions/stations/${storeId}`).subscribe({
+      next: (response) => {
+        response.data?.forEach((station) => {
+          this.stationMap.set(station.id, station.name);
+        });
+        callback();
+      },
+      error: () => {
+        callback();
+      }
+    });
   }
 
   stopMonitoring(): void {
@@ -69,14 +94,34 @@ export class TimeoutAlertService {
           if (isTimedOut && !hasAlert) {
             this.alertedSessions.add(session.id);
             const cost = (parseFloat(session.ratePerHour) / 60) * session.durationMins;
-            this.timeoutSessionData.set({
-              playerName: session.playerName || 'CrystalWolf',
-              stationName: session.stationName || 'Unknown Station',
-              cost,
-              durationMins: session.durationMins,
-              sessionId: session.id,
+
+            // Fetch player info
+            this.http.get<{ data: any }>(`${apiUrl}/api/players/${session.userId}`).subscribe({
+              next: (playerResponse) => {
+                const playerName = playerResponse.data?.email || playerResponse.data?.cellphone || 'Unknown Player';
+                const stationName = this.stationMap.get(session.stationId) || 'Unknown Station';
+                this.timeoutSessionData.set({
+                  playerName,
+                  stationName,
+                  cost,
+                  durationMins: session.durationMins,
+                  sessionId: session.id,
+                });
+                this.showTimeoutAlert.set(true);
+              },
+              error: () => {
+                // Fallback if player fetch fails
+                const stationName = this.stationMap.get(session.stationId) || 'Unknown Station';
+                this.timeoutSessionData.set({
+                  playerName: 'Unknown Player',
+                  stationName,
+                  cost,
+                  durationMins: session.durationMins,
+                  sessionId: session.id,
+                });
+                this.showTimeoutAlert.set(true);
+              }
             });
-            this.showTimeoutAlert.set(true);
           }
         });
       },

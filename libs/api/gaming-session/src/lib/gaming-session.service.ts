@@ -416,13 +416,15 @@ export class GamingSessionService {
   }
 
   async getSessionResult(sessionId: string): Promise<unknown> {
-    const [result] = await this.db
+    // Return all results for a session, not just the first one
+    // This allows multiple game captures per session
+    const results = await this.db
       .select()
       .from(gameSessionResults)
-      .where(eq(gameSessionResults.sessionId, sessionId))
-      .limit(1);
+      .where(eq(gameSessionResults.sessionId, sessionId));
 
-    return result || null;
+    // Return array of results, or empty array if none found
+    return results;
   }
 
   async updateSessionResult(resultId: string, data: ResultInput): Promise<unknown> {

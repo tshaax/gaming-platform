@@ -278,22 +278,22 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     },
   );
 
-  // Get session result
+  // Get session results (all results for a session, not just the first one)
   router.get(
     '/:sessionId/results',
     authenticate,
     async (req: Request, res: Response) => {
       try {
         const { sessionId } = req.params;
-        const result = await gamingSessionService.getSessionResult(sessionId);
-        const body: ApiResponse<typeof result> = { data: result, success: true };
+        const results = await gamingSessionService.getSessionResult(sessionId);
+        const body: ApiResponse<typeof results> = { data: results, success: true };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
         res.status(500).json({
           data: null,
           success: false,
-          error: error.message || 'Failed to fetch session result',
+          error: error.message || 'Failed to fetch session results',
         });
       }
     },

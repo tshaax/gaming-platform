@@ -440,9 +440,11 @@ export class ResultsHistoryComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           const sessionIds = response.data.map(s => s.id);
+          // Don't turn off loading yet - loadResults will handle it
           this.loadResults(sessionIds, response.data);
+        } else {
+          this.isLoading.set(false);
         }
-        this.isLoading.set(false);
       },
       error: (err) => {
         console.error('Failed to load sessions:', err);
@@ -453,132 +455,143 @@ export class ResultsHistoryComponent implements OnInit {
 
   private loadResults(sessionIds: string[], sessions: any[]): void {
     const allResults: SessionResult[] = [];
-    let loadedCount = 0;
+    let totalResultsToLoad = 0;
+    let resultsLoaded = 0;
 
     const finishLoading = () => {
       allResults.sort((a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
       this.sessionResults.set(allResults);
+      this.isLoading.set(false);  // Turn off loading spinner when all results are loaded
     };
+
+    const checkIfDone = () => {
+      if (resultsLoaded >= totalResultsToLoad && totalResultsToLoad > 0) {
+        finishLoading();
+      }
+    };
+
+    // First, count total results across all sessions
+    let sessionsFetched = 0;
 
     sessionIds.forEach((sessionId, index) => {
       const url = `${this.apiUrl}/api/gaming-sessions/${sessionId}/results`;
 
-      this.http.get<{ data: any; success: boolean }>(url).subscribe({
+      this.http.get<{ data: any[]; success: boolean }>(url).subscribe({
         next: (response) => {
-          console.log(`Loading result for session ${sessionId}:`, response);
-          if (response.success && response.data) {
+          console.log(`Loading results for session ${sessionId}:`, response);
+          sessionsFetched++;
+
+          if (response.success && response.data && Array.isArray(response.data)) {
             const session = sessions[index];
-            const result: SessionResult = {
-              id: response.data.id,
-              sessionId: sessionId,
-              storeId: session.storeId,
-              game: response.data.game,
-              score: response.data.score,
-              placement: response.data.placement,
-              result: response.data.result,
-              kills: response.data.kills,
-              deaths: response.data.deaths,
-              assists: response.data.assists,
-              createdAt: new Date(response.data.createdAt),
-              updatedAt: new Date(response.data.updatedAt),
-              sessionStartedAt: new Date(session.startedAt),
-              sessionEndedAt: session.endedAt ? new Date(session.endedAt) : undefined,
-              durationMins: session.durationMins,
-              ratePerHour: session.ratePerHour,
-              gameType: response.data.gameType || 'solo',
-              opponentUserId: response.data.opponentUserId,
-              player1Score: response.data.player1Score,
-              player2Score: response.data.player2Score,
-              winner: response.data.winner,
-            };
+            totalResultsToLoad += response.data.length;
 
-            // Get player info
-            this.http.get<{ data: any }>(
-              `${this.apiUrl}/api/players/${session.userId}`
-            ).subscribe({
-              next: (playerResponse) => {
-                if (playerResponse.data) {
-                  result.playerEmail = playerResponse.data.email;
-                  result.playerCellphone = playerResponse.data.cellphone;
-                }
+            // Handle multiple results per session
+            response.data.forEach((resultData) => {
+              const result: SessionResult = {
+                id: resultData.id,
+                sessionId: sessionId,
+                storeId: session.storeId,
+                game: resultData.game,
+                score: resultData.score,
+                placement: resultData.placement,
+                result: resultData.result,
+                kills: resultData.kills,
+                deaths: resultData.deaths,
+                assists: resultData.assists,
+                createdAt: new Date(resultData.createdAt),
+                updatedAt: new Date(resultData.updatedAt),
+                sessionStartedAt: new Date(session.startedAt),
+                sessionEndedAt: session.endedAt ? new Date(session.endedAt) : undefined,
+                durationMins: session.durationMins,
+                ratePerHour: session.ratePerHour,
+                gameType: resultData.gameType || 'solo',
+                opponentUserId: resultData.opponentUserId,
+                player1Score: resultData.player1Score,
+                player2Score: resultData.player2Score,
+                winner: resultData.winner,
+              };
 
-                // If vs player, load opponent info
-                if (result.opponentUserId) {
-                  this.http.get<{ data: any }>(
-                    `${this.apiUrl}/api/players/${result.opponentUserId}`
-                  ).subscribe({
-                    next: (opponentResponse) => {
-                      if (opponentResponse.data) {
-                        result.opponentEmail = opponentResponse.data.email;
-                        result.opponentCellphone = opponentResponse.data.cellphone;
-                      }
-                      allResults.push(result);
-                      loadedCount++;
-                      if (loadedCount === sessionIds.length) {
-                        finishLoading();
-                      }
-                    },
-                    error: () => {
-                      allResults.push(result);
-                      loadedCount++;
-                      if (loadedCount === sessionIds.length) {
-                        finishLoading();
-                      }
-                    },
-                  });
-                } else {
-                  allResults.push(result);
-                  loadedCount++;
-                  if (loadedCount === sessionIds.length) {
-                    finishLoading();
+              // Get player info
+              this.http.get<{ data: any }>(
+                `${this.apiUrl}/api/players/${session.userId}`
+              ).subscribe({
+                next: (playerResponse) => {
+                  if (playerResponse.data) {
+                    result.playerEmail = playerResponse.data.email;
+                    result.playerCellphone = playerResponse.data.cellphone;
                   }
-                }
-              },
-              error: () => {
-                if (result.opponentUserId) {
-                  this.http.get<{ data: any }>(
-                    `${this.apiUrl}/api/players/${result.opponentUserId}`
-                  ).subscribe({
-                    next: (opponentResponse) => {
-                      if (opponentResponse.data) {
-                        result.opponentEmail = opponentResponse.data.email;
-                        result.opponentCellphone = opponentResponse.data.cellphone;
-                      }
-                      allResults.push(result);
-                      loadedCount++;
-                      if (loadedCount === sessionIds.length) {
-                        finishLoading();
-                      }
-                    },
-                    error: () => {
-                      allResults.push(result);
-                      loadedCount++;
-                      if (loadedCount === sessionIds.length) {
-                        finishLoading();
-                      }
-                    },
-                  });
-                } else {
-                  allResults.push(result);
-                  loadedCount++;
-                  if (loadedCount === sessionIds.length) {
-                    finishLoading();
+
+                  // If vs player, load opponent info
+                  if (result.opponentUserId) {
+                    this.http.get<{ data: any }>(
+                      `${this.apiUrl}/api/players/${result.opponentUserId}`
+                    ).subscribe({
+                      next: (opponentResponse) => {
+                        if (opponentResponse.data) {
+                          result.opponentEmail = opponentResponse.data.email;
+                          result.opponentCellphone = opponentResponse.data.cellphone;
+                        }
+                        allResults.push(result);
+                        resultsLoaded++;
+                        checkIfDone();
+                      },
+                      error: () => {
+                        allResults.push(result);
+                        resultsLoaded++;
+                        checkIfDone();
+                      },
+                    });
+                  } else {
+                    allResults.push(result);
+                    resultsLoaded++;
+                    checkIfDone();
                   }
-                }
-              },
+                },
+                error: () => {
+                  if (result.opponentUserId) {
+                    this.http.get<{ data: any }>(
+                      `${this.apiUrl}/api/players/${result.opponentUserId}`
+                    ).subscribe({
+                      next: (opponentResponse) => {
+                        if (opponentResponse.data) {
+                          result.opponentEmail = opponentResponse.data.email;
+                          result.opponentCellphone = opponentResponse.data.cellphone;
+                        }
+                        allResults.push(result);
+                        resultsLoaded++;
+                        checkIfDone();
+                      },
+                      error: () => {
+                        allResults.push(result);
+                        resultsLoaded++;
+                        checkIfDone();
+                      },
+                    });
+                  } else {
+                    allResults.push(result);
+                    resultsLoaded++;
+                    checkIfDone();
+                  }
+                },
+              });
             });
+
+            // If no results for this session, still check if done
+            if (sessionsFetched === sessionIds.length && totalResultsToLoad === 0) {
+              finishLoading();
+            }
           } else {
-            loadedCount++;
-            if (loadedCount === sessionIds.length) {
+            // Handle case where API returns empty array or error
+            if (sessionsFetched === sessionIds.length && totalResultsToLoad === 0) {
               finishLoading();
             }
           }
         },
         error: () => {
-          loadedCount++;
-          if (loadedCount === sessionIds.length) {
+          sessionsFetched++;
+          if (sessionsFetched === sessionIds.length && totalResultsToLoad === 0) {
             finishLoading();
           }
         },

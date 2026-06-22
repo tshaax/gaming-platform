@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -64,7 +64,7 @@ interface SessionPlayer {
               class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-white/20 appearance-none"
             >
               <option value="">Select game...</option>
-              @for (game of games; track game.id) {
+              @for (game of uniqueGames(); track game.id) {
                 <option [value]="game.name">{{ game.name }}</option>
               }
             </select>
@@ -219,6 +219,18 @@ export class CaptureResultsDialogComponent {
   @Input() sessionPlayer?: SessionPlayer;
   @Output() save = new EventEmitter<CaptureResult>();
   @Output() closeDialog = new EventEmitter<void>();
+
+  // Remove duplicate games by name
+  uniqueGames = computed(() => {
+    const seen = new Set<string>();
+    return this.games.filter(game => {
+      if (seen.has(game.name)) {
+        return false;
+      }
+      seen.add(game.name);
+      return true;
+    });
+  });
 
   getPlayerName(): string {
     if (!this.sessionPlayer) return 'Player';
