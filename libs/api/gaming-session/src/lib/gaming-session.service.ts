@@ -384,10 +384,10 @@ export class GamingSessionService {
       .insert(gameSessionResults)
       .values({
         sessionId,
-        game: data.game,
-        score: data.score,
-        placement: data.placement ?? null,
-        result: data.result,
+        game: data.game || null,
+        score: data.score ?? null,
+        placement: data.placement ?? 0,
+        result: data.result || 'unknown',
         kills: data.kills ?? 0,
         deaths: data.deaths ?? 0,
         assists: data.assists ?? 0,

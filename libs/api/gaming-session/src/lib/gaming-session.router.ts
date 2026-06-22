@@ -217,6 +217,11 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           kills: input.kills,
           deaths: input.deaths,
           assists: input.assists,
+          gameType: input.gameType,
+          opponentUserId: input.opponentUserId,
+          player1Score: input.player1Score,
+          player2Score: input.player2Score,
+          winner: input.winner,
         });
 
         const body: ApiResponse<typeof result> = { data: result, success: true };
@@ -250,6 +255,11 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           kills: input.kills,
           deaths: input.deaths,
           assists: input.assists,
+          gameType: input.gameType,
+          opponentUserId: input.opponentUserId,
+          player1Score: input.player1Score,
+          player2Score: input.player2Score,
+          winner: input.winner,
         });
 
         // End the session
