@@ -380,26 +380,39 @@ export class GamingSessionService {
   }
 
   async createSessionResult(sessionId: string, data: ResultInput): Promise<unknown> {
-    const [result] = await this.db
-      .insert(gameSessionResults)
-      .values({
-        sessionId,
-        game: data.game || null,
-        score: data.score ?? null,
-        placement: data.placement ?? 0,
-        result: data.result || 'unknown',
-        kills: data.kills ?? 0,
-        deaths: data.deaths ?? 0,
-        assists: data.assists ?? 0,
-        gameType: data.gameType || 'solo',
-        opponentUserId: data.opponentUserId ?? null,
-        player1Score: data.player1Score ?? null,
-        player2Score: data.player2Score ?? null,
-        winner: data.winner ?? null,
-      })
-      .returning();
+    try {
+      // Always include all fields - use NULL for empty optional fields to avoid Drizzle DEFAULT issues
+      const [result] = await this.db
+        .insert(gameSessionResults)
+        .values({
+          sessionId,
+          game: data.game || null,
+          score: data.score ?? null,
+          placement: null,  // Always NULL - not used in current implementation
+          result: data.result || null,
+          kills: data.kills ?? 0,
+          deaths: data.deaths ?? 0,
+          assists: data.assists ?? 0,
+          gameType: data.gameType || 'solo',
+          opponentUserId: data.opponentUserId || null,
+          player1Score: data.player1Score ?? null,
+          player2Score: data.player2Score ?? null,
+          winner: data.winner || null,
+        })
+        .returning();
 
-    return result;
+      return result;
+    } catch (error: any) {
+      console.error('[GameSessionResult Insert Error]', {
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        schema: error.schema,
+        table: error.table,
+        column: error.column,
+      });
+      throw error;
+    }
   }
 
   async getSessionResult(sessionId: string): Promise<unknown> {
