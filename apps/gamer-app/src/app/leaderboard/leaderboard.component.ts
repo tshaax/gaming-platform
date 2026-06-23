@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { signal } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { AuthService } from '@org/fe/auth';
@@ -54,32 +54,38 @@ interface Event {
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <!-- Events List -->
-        @if (isLoading()) {
-          <div class="flex items-center justify-center py-12">
-            <div class="inline-block w-8 h-8 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
-          </div>
-        } @else if (events().length === 0) {
-          <div class="text-center py-12">
-            <p class="text-purple-200 text-lg">No events available</p>
-          </div>
-        } @else {
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            @for (event of events(); track event.id) {
-              <button
-                (click)="selectEvent(event)"
-                [class.ring-2]="selectedEvent()?.id === event.id"
-                [class.ring-cyan-400]="selectedEvent()?.id === event.id"
-                class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 p-6 hover:border-cyan-400/50 transition-all text-left"
-              >
-                <h3 class="text-xl font-bold text-white mb-2">{{ event.title }}</h3>
-                <p class="text-slate-400 text-sm">Click to view leaderboard</p>
-              </button>
-            }
-          </div>
+        <!-- List View: Events Grid -->
+        @if (!isDetailView()) {
+          @if (isLoading()) {
+            <div class="flex items-center justify-center py-12">
+              <div class="inline-block w-8 h-8 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
+            </div>
+          } @else if (events().length === 0) {
+            <div class="text-center py-12">
+              <p class="text-purple-200 text-lg">No events available</p>
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              @for (event of events(); track event.id) {
+                <button
+                  (click)="selectEvent(event)"
+                  class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 p-6 hover:border-cyan-400/50 transition-all text-left hover:scale-105 transform"
+                >
+                  <h3 class="text-xl font-bold text-white mb-2">{{ event.title }}</h3>
+                  <p class="text-slate-400 text-sm">📊 View leaderboard</p>
+                </button>
+              }
+            </div>
+          }
+        }
 
-          <!-- Leaderboard -->
-          @if (selectedEvent()) {
+        <!-- Detail View: Event Leaderboard -->
+        @if (isDetailView()) {
+          @if (isLoading()) {
+            <div class="flex items-center justify-center py-12">
+              <div class="inline-block w-8 h-8 border-4 border-purple-300 border-t-white rounded-full animate-spin"></div>
+            </div>
+          } @else if (selectedEvent()) {
             <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 p-8">
               <h2 class="text-2xl font-bold text-white mb-6">{{ selectedEvent()?.title }} - Leaderboard</h2>
 
@@ -158,6 +164,7 @@ interface Event {
 })
 export class LeaderboardComponent implements OnInit {
   private router = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private apiUrl = environment.apiUrl;
@@ -168,10 +175,21 @@ export class LeaderboardComponent implements OnInit {
   isLoading = signal(false);
   leaderboardLoading = signal(false);
   currentPlayerId = signal<string | null>(null);
+  isDetailView = signal(false);
 
   ngOnInit(): void {
     this.currentPlayerId.set(this.authService.userId() || null);
-    this.loadEvents();
+
+    // Check if eventId is in route params
+    this.activatedRoute.params.subscribe(params => {
+      if (params['eventId']) {
+        this.isDetailView.set(true);
+        this.loadEventDetails(params['eventId']);
+      } else {
+        this.isDetailView.set(false);
+        this.loadEvents();
+      }
+    });
   }
 
   private loadEvents(): void {
@@ -191,8 +209,28 @@ export class LeaderboardComponent implements OnInit {
   }
 
   selectEvent(event: Event): void {
-    this.selectedEvent.set(event);
-    this.loadLeaderboard(event.id);
+    this.router.navigate(['/leaderboard', event.id]);
+  }
+
+  private loadEventDetails(eventId: string): void {
+    this.isLoading.set(true);
+    // Load event details
+    this.http.get<{ data: Event[]; success: boolean }>(`${this.apiUrl}/api/events`).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const event = response.data.find(e => e.id === eventId);
+          if (event) {
+            this.selectedEvent.set(event);
+            this.loadLeaderboard(eventId);
+          }
+        }
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load event details:', err);
+        this.isLoading.set(false);
+      },
+    });
   }
 
   private loadLeaderboard(eventId: string): void {
@@ -223,7 +261,11 @@ export class LeaderboardComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/']);
+    if (this.isDetailView()) {
+      this.router.navigate(['/leaderboard']);
+    } else {
+      this.router.navigate(['/']);
+    }
   }
 
   logout(): void {

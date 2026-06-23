@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { environment } from '../../environments/environment';
+import { OcrCaptureDialogComponent, CaptureResult } from '../portal/ocr-capture-dialog.component';
 
 interface CompletedSession {
   id: string;
@@ -29,7 +30,7 @@ interface CompletedSession {
 @Component({
   selector: 'app-play-history',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OcrCaptureDialogComponent],
   template: `
     <div class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900">
       <!-- Header -->
@@ -175,76 +176,14 @@ interface CompletedSession {
           </div>
         }
 
-        <!-- Edit Results Dialog -->
-        @if (editingSession()) {
-          <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl border border-white/10 w-full max-w-md">
-              <div class="p-6 border-b border-white/10">
-                <h2 class="text-2xl font-bold text-white">Edit Results</h2>
-                <p class="text-slate-400 text-sm mt-2">{{ editingSession()?.game }} - {{ editingSession()?.startedAt | date: 'yyyy/MM/dd HH:mm' }}</p>
-              </div>
-
-              <div class="p-6 space-y-4">
-                <!-- Game Selection - Only show if game is not set -->
-                @if (!editingSession()?.game) {
-                  <div>
-                    <label class="block text-sm font-medium text-slate-300 mb-2">Game</label>
-                    <select
-                      [(ngModel)]="editForm.game"
-                      class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400"
-                    >
-                      <option value="">Select a game...</option>
-                      @for (game of games(); track game.id) {
-                        <option [value]="game.name">{{ game.name }}</option>
-                      }
-                    </select>
-                  </div>
-                }
-
-                <!-- Result -->
-                <div>
-                  <label class="block text-sm font-medium text-slate-300 mb-2">Result</label>
-                  <select
-                    [(ngModel)]="editForm.result"
-                    class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400"
-                  >
-                    <option value="">Select result...</option>
-                    <option value="win">Win</option>
-                    <option value="loss">Loss</option>
-                    <option value="draw">Draw</option>
-                  </select>
-                </div>
-
-                <!-- Score -->
-                <div>
-                  <label class="block text-sm font-medium text-slate-300 mb-2">Score</label>
-                  <input
-                    type="number"
-                    [(ngModel)]="editForm.score"
-                    placeholder="Enter score"
-                    class="w-full px-3 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400"
-                  />
-                </div>
-
-                <!-- Buttons -->
-                <div class="flex gap-3 pt-4">
-                  <button
-                    (click)="closeEditDialog()"
-                    class="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    (click)="saveEditedResults()"
-                    [disabled]="isUpdating()"
-                    class="flex-1 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-600 text-white rounded-lg transition-colors font-semibold"
-                  >
-                    {{ isUpdating() ? 'Saving...' : 'Save' }}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        <!-- OCR Capture Dialog for Editing Results -->
+        @if (editingSession() && showOcrDialog()) {
+          <app-ocr-capture-dialog
+            [sessionGame]="editingSession()?.game || 'Game'"
+            [sessionId]="editingSession()?.id || ''"
+            (save)="onOcrResultSaved($event)"
+            (closeDialog)="closeEditDialog()"
+          ></app-ocr-capture-dialog>
         }
       </main>
     </div>
@@ -260,6 +199,7 @@ export class PlayHistoryComponent implements OnInit {
   isLoading = signal(false);
   isUpdating = signal(false);
   editingSession = signal<CompletedSession | null>(null);
+  showOcrDialog = signal(false);
   pageSize = signal(10);
   currentPage = signal(1);
   games = signal<{ id: string; name: string }[]>([]);
@@ -276,12 +216,6 @@ export class PlayHistoryComponent implements OnInit {
   totalPages = computed(() => {
     return Math.ceil(this.completedSessions().length / this.pageSize());
   });
-
-  editForm = {
-    game: '',
-    result: '',
-    score: null as number | null,
-  };
 
   ngOnInit(): void {
     this.loadPlayHistory();
@@ -338,101 +272,41 @@ export class PlayHistoryComponent implements OnInit {
 
   openEditDialog(session: CompletedSession): void {
     this.editingSession.set(session);
-    this.editForm = {
-      game: session.game || '',
-      result: session.result || '',
-      score: session.score || null,
-    };
+    this.showOcrDialog.set(true);
   }
 
   closeEditDialog(): void {
     this.editingSession.set(null);
+    this.showOcrDialog.set(false);
   }
 
-  private updateSessionGameInUI(sessionId: string, game: string): void {
-    const sessions = this.completedSessions();
-    const updatedSessions = sessions.map(s =>
-      s.id === sessionId ? { ...s, game } : s
-    );
-    this.completedSessions.set(updatedSessions);
-    console.log('Updated session game in UI:', sessionId, game);
-  }
-
-  saveEditedResults(): void {
+  onOcrResultSaved(result: CaptureResult): void {
     const session = this.editingSession();
-    if (!session) {
-      console.warn('Missing session');
-      return;
-    }
-
-    // Validate that at least game is set
-    const gameToSave = this.editForm.game || session.game;
-    if (!gameToSave) {
-      console.warn('Game is required');
-      alert('Please select a game');
-      return;
-    }
+    if (!session) return;
 
     this.isUpdating.set(true);
-    const payload: any = {
-      game: gameToSave,
+    const payload = {
+      game: result.game,
+      result: result.result,
+      score: result.score,
     };
 
-    // Only include result if it has a value
-    if (this.editForm.result) {
-      payload.result = this.editForm.result;
-    }
-
-    // Only include score if it has a value
-    if (this.editForm.score !== null && this.editForm.score !== undefined) {
-      payload.score = this.editForm.score;
-    }
-
-    console.log('Saving results with payload:', payload);
-    console.log('Session ID:', session.id);
-    console.log('Result ID:', session.resultId);
-
-    // If resultId exists, update the result; otherwise create a new one
-    if (session.resultId) {
-      // Update existing result
-      this.http.put(
-        `${this.apiUrl}/api/gaming-sessions/results/${session.resultId}`,
-        payload
-      ).subscribe({
-        next: (response) => {
-          console.log('Results updated successfully:', response);
+    this.http
+      .put(`${this.apiUrl}/api/gaming-sessions/${session.id}/results`, payload)
+      .subscribe({
+        next: () => {
           this.isUpdating.set(false);
-          this.editingSession.set(null);
-          this.updateSessionGameInUI(session.id, gameToSave);
           this.loadPlayHistory();
+          this.closeEditDialog();
         },
         error: (err) => {
-          console.error('Failed to update results:', err);
-          console.error('Error details:', err.error || err.message);
+          console.error('Failed to update result:', err);
+          alert('Failed to update result. Please try again.');
           this.isUpdating.set(false);
         },
       });
-    } else {
-      // Create new result
-      this.http.post(
-        `${this.apiUrl}/api/gaming-sessions/${session.id}/results`,
-        payload
-      ).subscribe({
-        next: (response) => {
-          console.log('Results created successfully:', response);
-          this.isUpdating.set(false);
-          this.editingSession.set(null);
-          this.updateSessionGameInUI(session.id, gameToSave);
-          this.loadPlayHistory();
-        },
-        error: (err) => {
-          console.error('Failed to create results:', err);
-          console.error('Error details:', err.error || err.message);
-          this.isUpdating.set(false);
-        },
-      });
-    }
   }
+
 
   goBack(): void {
     this.router.navigate(['/']);

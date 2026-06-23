@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, inject, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -22,8 +22,15 @@ interface ActiveSession {
 
 interface Player {
   id: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   cellphone?: string;
+}
+
+interface SelectedOpponent {
+  id: string;
+  name: string;
 }
 
 interface Game {
@@ -169,18 +176,41 @@ interface EventRegistration {
           <h2 class="text-2xl font-bold text-white mb-6">Game Details</h2>
 
           <form [formGroup]="gameForm" class="space-y-6">
-            <!-- Game Selection with Thumbnails -->
+            <!-- Game Selection with Filter and Pagination -->
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-3">
                 Select a Game
               </label>
+
+              <!-- Game Filter Dropdown -->
+              @if (games().length > 0) {
+                <div class="mb-4">
+                  <select
+                    [value]="selectedGameFilter()"
+                    (change)="onFilterChange($any($event).target.value)"
+                    class="w-full px-4 py-2 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400 appearance-none"
+                  >
+                    <option value="">All Games</option>
+                    @for (game of games(); track game.id) {
+                      <option [value]="game.name">{{ game.name }}</option>
+                    }
+                  </select>
+                </div>
+              }
+
               @if (games().length === 0) {
                 <div class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-lg text-slate-400 text-center">
                   No games available for this store
                 </div>
               } @else {
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  @for (game of games(); track game.id) {
+                @if (filteredAndPaginatedGames().length === 0) {
+                  <div class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-lg text-slate-400 text-center">
+                    No games match your filter
+                  </div>
+                } @else {
+                <!-- Game Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                  @for (game of filteredAndPaginatedGames(); track game.id) {
                     @if (game.isActive) {
                       <button
                         type="button"
@@ -221,6 +251,30 @@ interface EventRegistration {
                     }
                   }
                 </div>
+
+                <!-- Pagination Controls -->
+                @if (totalPages() > 1) {
+                  <div class="flex items-center justify-between mt-4 px-4 py-3 bg-slate-700/30 rounded-lg border border-white/10">
+                    <button
+                      (click)="prevPage()"
+                      [disabled]="currentPage() === 1"
+                      class="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded transition-colors"
+                    >
+                      ← Previous
+                    </button>
+                    <span class="text-slate-300 text-sm">
+                      Page {{ currentPage() }} of {{ totalPages() }}
+                    </span>
+                    <button
+                      (click)="nextPage()"
+                      [disabled]="currentPage() === totalPages()"
+                      class="px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded transition-colors"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                }
+                }
               }
               <!-- Hidden select for form tracking -->
               <select
@@ -258,21 +312,73 @@ interface EventRegistration {
 
             <!-- Opponent Selection -->
             @if (gameForm.get('opponentType')?.value === 'opponent') {
-              <div>
+              <div class="relative">
                 <label for="opponent" class="block text-sm font-medium text-slate-300 mb-2">
                   Select Opponent
                 </label>
-                <select
-                  id="opponent"
-                  formControlName="opponentUserId"
-                  class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30"
-                >
-                  <option value="">Choose a player...</option>
-                  @for (player of otherPlayers(); track player.id) {
-                    <option [value]="player.id">
-                      {{ player.email || player.cellphone || player.id }}
-                    </option>
+                <div class="relative">
+                  <input
+                    type="text"
+                    id="opponent"
+                    [value]="selectedOpponentName() || opponentSearch()"
+                    (input)="onOpponentSearch($any($event).target.value)"
+                    (focus)="showOpponentDropdown.set(true)"
+                    [placeholder]="selectedOpponentName() ? 'Change opponent...' : 'Search by name, email or phone...'"
+                    class="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 placeholder-slate-500"
+                  />
+                  @if (opponentSearch()) {
+                    <button
+                      type="button"
+                      (click)="clearOpponentSearch()"
+                      class="absolute right-3 top-3 text-slate-400 hover:text-white transition-colors"
+                    >
+                      ✕
+                    </button>
                   }
+                </div>
+
+                <!-- Opponent Dropdown -->
+                @if (showOpponentDropdown() && filteredOpponents().length > 0) {
+                  <div class="absolute top-full left-0 right-0 mt-1 bg-slate-700 border border-white/10 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    @for (player of filteredOpponents(); track player.id) {
+                      <button
+                        type="button"
+                        (click)="selectOpponent(player.id)"
+                        [class.bg-cyan-600/30]="gameForm.get('opponentUserId')?.value === player.id"
+                        class="w-full text-left px-4 py-3 hover:bg-slate-600 transition-colors border-b border-white/5 last:border-b-0"
+                      >
+                        <div class="text-white font-medium">
+                          {{ (player.firstName && player.lastName) ? player.firstName + ' ' + player.lastName : (player.firstName || player.lastName || player.email || player.cellphone || 'Unknown') }}
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1">
+                          @if (player.email) {
+                            {{ maskEmail(player.email) }} (Email)
+                          } @else if (player.cellphone) {
+                            {{ maskPhoneNumber(player.cellphone) }} (Phone)
+                          }
+                        </div>
+                      </button>
+                    }
+                  </div>
+                }
+
+                @if (showOpponentDropdown() && filteredOpponents().length === 0 && otherPlayers().length > 0) {
+                  <div class="absolute top-full left-0 right-0 mt-1 bg-slate-700 border border-white/10 rounded-lg px-4 py-3 text-slate-400 text-sm z-10">
+                    No players match your search
+                  </div>
+                }
+
+                @if (otherPlayers().length === 0) {
+                  <div class="absolute top-full left-0 right-0 mt-1 bg-slate-700 border border-white/10 rounded-lg px-4 py-3 text-slate-400 text-sm z-10">
+                    No other players available at this store
+                  </div>
+                }
+
+                <!-- Hidden select for form tracking -->
+                <select
+                  formControlName="opponentUserId"
+                  class="hidden"
+                >
                 </select>
               </div>
             }
@@ -300,6 +406,7 @@ interface EventRegistration {
       @if (showOcrDialog()) {
         <app-ocr-capture-dialog
           [sessionGame]="session()?.game || 'Unknown Game'"
+          [sessionId]="session()?.id || ''"
           (save)="submitResults($event)"
           (closeDialog)="closeOcrDialog()"
         />
@@ -326,6 +433,54 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
   playerReservedEvents = signal<EventRegistration[]>([]);
   selectedEventForSession = signal<EventRegistration | null>(null);
   selectedEventGame = signal<string | null>(null);
+
+  // Filter and Pagination
+  selectedGameFilter = signal<string>('');
+  currentPage = signal(1);
+  pageSize = signal(6); // Show 6 games per page (2x3 grid)
+
+  // Opponent Search
+  opponentSearch = signal<string>('');
+  showOpponentDropdown = signal(false);
+  selectedOpponentName = signal<string>('');
+
+  filteredOpponents = computed(() => {
+    const search = this.opponentSearch().toLowerCase();
+    return search
+      ? this.otherPlayers().filter(p =>
+          (p.email?.toLowerCase().includes(search) ||
+           p.cellphone?.toLowerCase().includes(search))
+        )
+      : this.otherPlayers();
+  });
+
+  filteredAndPaginatedGames = computed(() => {
+    const filter = this.selectedGameFilter().toLowerCase();
+    const allGames = this.games();
+
+    // Filter games
+    const filtered = filter
+      ? allGames.filter(g => g.name.toLowerCase().includes(filter))
+      : allGames;
+
+    // Paginate
+    const page = this.currentPage();
+    const size = this.pageSize();
+    const start = (page - 1) * size;
+    const end = start + size;
+
+    return filtered.slice(start, end);
+  });
+
+  totalPages = computed(() => {
+    const filter = this.selectedGameFilter().toLowerCase();
+    const allGames = this.games();
+    const filtered = filter
+      ? allGames.filter(g => g.name.toLowerCase().includes(filter))
+      : allGames;
+
+    return Math.ceil(filtered.length / this.pageSize());
+  });
 
   gameForm: FormGroup;
   private timerInterval: any;
@@ -417,6 +572,82 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
 
   selectGame(gameId: string): void {
     this.gameForm.patchValue({ gameId });
+  }
+
+  onFilterChange(gameName: string): void {
+    this.selectedGameFilter.set(gameName);
+    this.currentPage.set(1); // Reset to first page when filter changes
+  }
+
+  onOpponentSearch(value: string): void {
+    this.opponentSearch.set(value);
+    if (value) {
+      this.showOpponentDropdown.set(true);
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update(page => page + 1);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.update(page => page - 1);
+    }
+  }
+
+  maskEmail(email: string | undefined): string {
+    if (!email) return '';
+    const [username, domain] = email.split('@');
+    if (!domain) return this.maskString(email, 2);
+
+    const visibleChars = Math.min(2, username.length);
+    const maskedUsername = username.substring(0, visibleChars) + '*'.repeat(Math.max(1, username.length - visibleChars));
+    const [domainName, tld] = domain.split('.');
+    const maskedDomain = '*'.repeat(Math.max(1, domainName.length - 1)) + domainName.charAt(domainName.length - 1);
+    return `${maskedUsername}@${maskedDomain}.${tld}`;
+  }
+
+  maskPhoneNumber(phone: string | undefined): string {
+    if (!phone) return '';
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 4) return phone;
+    const lastFour = digits.slice(-4);
+    const masked = '*'.repeat(Math.max(1, digits.length - 4));
+    return `${masked}${lastFour}`;
+  }
+
+  private maskString(value: string, visibleChars: number): string {
+    if (value.length <= visibleChars) return value;
+    const visible = value.substring(0, visibleChars);
+    const masked = '*'.repeat(Math.max(1, value.length - visibleChars));
+    return `${visible}${masked}`;
+  }
+
+  selectOpponent(playerId: string): void {
+    const selectedPlayer = this.otherPlayers().find(p => p.id === playerId);
+    const opponentName = selectedPlayer
+      ? `${selectedPlayer.firstName || ''} ${selectedPlayer.lastName || ''}`.trim() || selectedPlayer.email || selectedPlayer.cellphone || 'Unknown'
+      : 'Unknown';
+
+    this.gameForm.patchValue({ opponentUserId: playerId });
+    this.selectedOpponentName.set(opponentName);
+    this.opponentSearch.set('');
+    this.showOpponentDropdown.set(false);
+  }
+
+  toggleOpponentDropdown(): void {
+    this.showOpponentDropdown.update(v => !v);
+  }
+
+  clearOpponentSearch(): void {
+    this.opponentSearch.set('');
+    if (!this.selectedOpponentName()) {
+      this.gameForm.patchValue({ opponentUserId: '' });
+      this.selectedOpponentName.set('');
+    }
   }
 
   saveDetailsAndCapture(): void {
@@ -586,7 +817,7 @@ export class GamingPortalComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: () => {
         this.isSavingDetails.set(false);
-        this.router.navigate(['/']);
+        this.router.navigate(['/history']);
       },
       error: (err) => {
         console.error('Failed to end session:', err);

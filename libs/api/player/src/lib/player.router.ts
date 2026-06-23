@@ -3,10 +3,19 @@ import { z } from 'zod';
 import { PlayerService } from './player.service';
 
 const createPlayerSchema = z.object({
+  firstName: z.string().min(2).max(255),
+  lastName: z.string().min(2).max(255),
   email: z.string().email().optional(),
   cellphone: z.string().min(7).max(20).optional(),
   password: z.string().min(8).max(128),
   storeIds: z.array(z.string().uuid()),
+});
+
+const updatePlayerSchema = z.object({
+  firstName: z.string().min(2).max(255).optional(),
+  lastName: z.string().min(2).max(255).optional(),
+  email: z.string().email().optional(),
+  cellphone: z.string().min(7).max(20).optional(),
 });
 
 const linkPlayerToStoresSchema = z.object({
@@ -132,6 +141,27 @@ export function createPlayerRouter(service: PlayerService): Router {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Failed to unlink player from store';
+      res.status(400).json({
+        success: false,
+        data: null,
+        error: message,
+      });
+    }
+  });
+
+  router.put('/:playerId', async (req, res) => {
+    try {
+      const { playerId } = req.params;
+      const input = updatePlayerSchema.parse(req.body);
+
+      const player = await service.updatePlayer(playerId, input);
+      res.json({
+        success: true,
+        data: player,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update player';
       res.status(400).json({
         success: false,
         data: null,

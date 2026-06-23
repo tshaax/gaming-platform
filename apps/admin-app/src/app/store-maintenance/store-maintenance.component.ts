@@ -52,6 +52,8 @@ interface Game {
 
 interface Player {
   id: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   cellphone?: string;
   stores: Array<{ id: string; name: string; role: string }>;
@@ -881,15 +883,16 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'games' | 'players';
                             <div class="flex-1 min-w-0">
                               <h4 class="text-white font-bold text-lg truncate">
                                 {{
-                                  player.email ||
+                                  (player.firstName || '') + ' ' + (player.lastName || '') ||
+                                    player.email ||
                                     player.cellphone ||
                                     'Player ' + player.id.slice(0, 8)
                                 }}
                               </h4>
                               <p class="text-slate-400 text-sm truncate">
                                 {{
-                                  player.cellphone ||
-                                    player.email ||
+                                  player.email ||
+                                    player.cellphone ||
                                     'No contact info'
                                 }}
                               </p>
@@ -897,18 +900,7 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'games' | 'players';
                             <!-- Action Icons -->
                             <div class="flex gap-1 flex-shrink-0">
                               <button
-                                (click)="
-                                  editingPlayerId.set(player.id);
-                                  playerForm.patchValue({
-                                    email: player.email || '',
-                                    cellphone: player.cellphone || '',
-                                    password: '',
-                                  });
-                                  selectedPlayersStores.set(
-                                    player.stores.map((s) => s.id)
-                                  );
-                                  showCreatePlayerForm.set(true)
-                                "
+                                (click)="editPlayer(player)"
                                 title="Edit player"
                                 class="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 rounded transition-colors text-lg"
                               >
@@ -1148,6 +1140,43 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'games' | 'players';
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-slate-300 text-sm font-semibold mb-2"
+                    >First Name <span class="text-red-400">*</span></label
+                  >
+                  <input
+                    type="text"
+                    formControlName="firstName"
+                    placeholder="John"
+                    class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                  />
+                  @if (playerForm.get('firstName')?.hasError('required') && playerForm.get('firstName')?.touched) {
+                    <p class="text-red-400 text-xs mt-1">First name is required</p>
+                  }
+                  @if (playerForm.get('firstName')?.hasError('minlength') && playerForm.get('firstName')?.touched) {
+                    <p class="text-red-400 text-xs mt-1">First name must be at least 2 characters</p>
+                  }
+                </div>
+                <div>
+                  <label class="block text-slate-300 text-sm font-semibold mb-2"
+                    >Last Name <span class="text-red-400">*</span></label
+                  >
+                  <input
+                    type="text"
+                    formControlName="lastName"
+                    placeholder="Doe"
+                    class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400"
+                  />
+                  @if (playerForm.get('lastName')?.hasError('required') && playerForm.get('lastName')?.touched) {
+                    <p class="text-red-400 text-xs mt-1">Last name is required</p>
+                  }
+                  @if (playerForm.get('lastName')?.hasError('minlength') && playerForm.get('lastName')?.touched) {
+                    <p class="text-red-400 text-xs mt-1">Last name must be at least 2 characters</p>
+                  }
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-slate-300 text-sm font-semibold mb-2"
                     >Email (Optional)</label
                   >
                   <input
@@ -1194,6 +1223,7 @@ type TabType = 'stores' | 'stations' | 'pricing' | 'games' | 'players';
                       <input
                         type="checkbox"
                         [id]="'create-store-' + store.id"
+                        [checked]="selectedPlayersStores().includes(store.id)"
                         (change)="toggleStoreSelection($event, store.id)"
                         class="w-4 h-4 rounded cursor-pointer"
                       />
@@ -1455,9 +1485,11 @@ export class StoreMaintenanceComponent implements OnInit {
     });
 
     this.playerForm = this.fb.group({
+      firstName: ['', [Validators.required, Validators.minLength(2)]],
+      lastName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.email]],
       cellphone: [''],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.minLength(8)]],
     });
   }
 
@@ -1736,7 +1768,7 @@ export class StoreMaintenanceComponent implements OnInit {
       return;
     }
 
-    const { email, cellphone, password } = this.playerForm.value;
+    const { firstName, lastName, email, cellphone, password } = this.playerForm.value;
 
     if (!email && !cellphone) {
       this.errorMessage.set('At least one of email or phone is required');
@@ -1747,6 +1779,8 @@ export class StoreMaintenanceComponent implements OnInit {
     this.errorMessage.set(null);
 
     const payload = {
+      firstName,
+      lastName,
       email: email || undefined,
       cellphone: cellphone || undefined,
       password,
@@ -1777,7 +1811,7 @@ export class StoreMaintenanceComponent implements OnInit {
       return;
     }
 
-    const { email, cellphone } = this.playerForm.value;
+    const { firstName, lastName, email, cellphone } = this.playerForm.value;
 
     if (!email && !cellphone) {
       this.errorMessage.set('At least one of email or phone is required');
@@ -1798,27 +1832,67 @@ export class StoreMaintenanceComponent implements OnInit {
       (id) => !this.selectedPlayersStores().includes(id),
     );
 
+    const updatePayload: any = {
+      firstName,
+      lastName,
+    };
+    if (email) updatePayload.email = email;
+    if (cellphone) updatePayload.cellphone = cellphone;
+
+    // Update player details
+    this.http
+      .put(`${environment.apiUrl}/api/players/${playerId}`, updatePayload)
+      .subscribe({
+        next: () => {
+          // Handle store changes after player details are updated
+          this.updatePlayerStores(playerId, storesToAdd, storesToRemove);
+        },
+        error: (err) => {
+          console.error('Failed to update player details:', err);
+          this.errorMessage.set(
+            err.error?.error || 'Failed to update player details',
+          );
+          this.isLoadingSettings.set(false);
+        },
+      });
+  }
+
+  private updatePlayerStores(
+    playerId: string,
+    storesToAdd: string[],
+    storesToRemove: string[],
+  ): void {
     let requestCount = 0;
     let completedCount = 0;
 
-    // Add new stores
     if (storesToAdd.length > 0) {
       requestCount++;
+    }
+    if (storesToRemove.length > 0) {
+      requestCount += storesToRemove.length;
+    }
+
+    const checkComplete = () => {
+      completedCount++;
+      if (completedCount === requestCount) {
+        this.finishPlayerUpdate();
+      }
+    };
+
+    // Add new stores
+    if (storesToAdd.length > 0) {
       this.http
         .post(`${environment.apiUrl}/api/players/${playerId}/stores`, {
           storeIds: storesToAdd,
         })
         .subscribe({
           next: () => {
-            completedCount++;
-            if (completedCount === requestCount) {
-              this.finishPlayerUpdate();
-            }
+            checkComplete();
           },
           error: (err) => {
             console.error('Failed to add stores:', err);
             this.errorMessage.set(
-              err.error?.error || 'Failed to update stores',
+              err.error?.error || 'Failed to add stores',
             );
             this.isLoadingSettings.set(false);
           },
@@ -1827,28 +1901,25 @@ export class StoreMaintenanceComponent implements OnInit {
 
     // Remove old stores
     for (const storeId of storesToRemove) {
-      requestCount++;
       this.http
         .delete(
           `${environment.apiUrl}/api/players/${playerId}/stores/${storeId}`,
         )
         .subscribe({
           next: () => {
-            completedCount++;
-            if (completedCount === requestCount) {
-              this.finishPlayerUpdate();
-            }
+            checkComplete();
           },
           error: (err) => {
             console.error('Failed to remove store:', err);
             this.errorMessage.set(
-              err.error?.error || 'Failed to update stores',
+              err.error?.error || 'Failed to remove store',
             );
             this.isLoadingSettings.set(false);
           },
         });
     }
 
+    // If no stores to add/remove, finish immediately
     if (requestCount === 0) {
       this.finishPlayerUpdate();
     }
@@ -1863,6 +1934,19 @@ export class StoreMaintenanceComponent implements OnInit {
     setTimeout(() => this.successMessage.set(null), 3000);
     this.loadPlayers();
     this.isLoadingSettings.set(false);
+  }
+
+  editPlayer(player: Player): void {
+    this.editingPlayerId.set(player.id);
+    this.playerForm.patchValue({
+      firstName: player.firstName || '',
+      lastName: player.lastName || '',
+      email: player.email || '',
+      cellphone: player.cellphone || '',
+      password: '',
+    });
+    this.selectedPlayersStores.set(player.stores.map((s) => s.id));
+    this.showCreatePlayerForm.set(true);
   }
 
   toggleStoreSelection(event: Event, storeId: string): void {

@@ -94,6 +94,21 @@ interface Promotion {
   endDate: string;
 }
 
+interface GameResult {
+  id: string;
+  sessionId: string;
+  game: string;
+  score: number;
+  result?: string;
+  placement?: number;
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+  verifiedBy?: string;
+  verifiedAt?: string;
+  verificationNotes?: string;
+  createdAt: string;
+  playerName: string;
+}
+
 @Component({
   selector: 'app-landing',
   standalone: true,
@@ -131,10 +146,17 @@ interface Promotion {
               <span>Live Sessions</span>
             }
           </div>
-          <div (click)="router.navigate(['/results-history'])" class="px-4 py-3 hover:bg-white/5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 cursor-pointer transition-colors">
+          <div (click)="router.navigate(['/results-history'])" class="px-4 py-3 hover:bg-white/5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 cursor-pointer transition-colors relative">
             <span class="text-lg">📜</span>
             @if (sidebarOpen()) {
               <span>Results History</span>
+              @if (pendingResultsCount() > 0) {
+                <span class="ml-auto inline-flex items-center justify-center h-6 w-6 rounded-full bg-orange-600 text-white text-xs font-bold">{{ pendingResultsCount() }}</span>
+              }
+            } @else {
+              @if (pendingResultsCount() > 0) {
+                <span class="absolute -top-2 -right-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-orange-600 text-white text-xs font-bold">{{ pendingResultsCount() }}</span>
+              }
             }
           </div>
           <div (click)="router.navigate(['/reports'])" class="px-4 py-3 hover:bg-white/5 rounded-lg text-slate-300 hover:text-white flex items-center gap-3 cursor-pointer transition-colors">
@@ -923,6 +945,7 @@ export class LandingComponent implements OnInit {
   eventsLoading = signal(false);
   eventsError = signal<string | null>(null);
   playersLoading = signal(false);
+  pendingResultsCount = signal<number>(0);
   playersError = signal<string | null>(null);
   showSessionStartDialog = signal(false);
   pendingSessionData = signal<{ eventId: string; playerId: string; entryFeeType?: string } | null>(null);
@@ -986,6 +1009,7 @@ export class LandingComponent implements OnInit {
     this.loadStoreData();
     this.loadEvents();
     this.loadPromotions();
+    this.loadPendingResultsCount();
 
     // Subscribe to form duration changes and update signal
     // This makes the computed selectedDurationRate re-evaluate automatically
@@ -994,6 +1018,30 @@ export class LandingComponent implements OnInit {
         this.formDurationValue.set(value);
       }
     });
+  }
+
+  private loadPendingResultsCount(): void {
+    const storeId = this.authService.storeId();
+    if (!storeId) return;
+
+    this.http
+      .get<{ success: boolean; data: GameResult[] }>(
+        `${this.apiUrl}/api/game-results/${storeId}`,
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Count only OCR-captured results that are pending verification
+            const pendingOcrResults = response.data.filter(
+              r => r.verificationStatus === 'pending'
+            ).length;
+            this.pendingResultsCount.set(pendingOcrResults);
+          }
+        },
+        error: (err) => {
+          console.error('Failed to load pending results count:', err);
+        },
+      });
   }
 
   private loadStoreName(): void {

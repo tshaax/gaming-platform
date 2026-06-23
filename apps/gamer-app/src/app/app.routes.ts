@@ -12,5 +12,6 @@ export const appRoutes: Route[] = [
   { path: 'portal/:storeId', component: GamingPortalComponent, canActivate: [authGuard] },
   { path: 'history', component: PlayHistoryComponent, canActivate: [authGuard] },
   { path: 'leaderboard', component: LeaderboardComponent, canActivate: [authGuard] },
+  { path: 'leaderboard/:eventId', component: LeaderboardComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' },
 ];

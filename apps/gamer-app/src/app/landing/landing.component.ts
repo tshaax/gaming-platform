@@ -47,7 +47,9 @@ import { environment } from '../../environments/environment';
         <div class="mb-12">
           <div class="bg-gradient-to-r from-purple-600/20 to-violet-600/20 backdrop-blur-md rounded-2xl p-8 border border-white/10">
             <div>
-              <h2 class="text-4xl font-bold text-white mb-2">Welcome, {{ userInfo()?.email || userInfo()?.cellphone || 'Gamer' }}!</h2>
+              <h2 class="text-4xl font-bold text-white mb-2">
+                Welcome, {{ userInfo()?.firstName && userInfo()?.lastName ? userInfo()?.firstName + ' ' + userInfo()?.lastName : (userInfo()?.firstName || userInfo()?.lastName || userInfo()?.email || userInfo()?.cellphone || 'Gamer') }}!
+              </h2>
               <p class="text-purple-200 text-lg">Select an active gaming session to play</p>
             </div>
           </div>
@@ -95,7 +97,7 @@ export class LandingComponent implements OnInit, OnDestroy {
   private apiUrl = environment.apiUrl;
   private expirationCheckInterval: any;
 
-  userInfo = signal<{ email?: string | null; cellphone?: string | null; role?: string; userId?: string } | null>(null);
+  userInfo = signal<{ firstName?: string | null; lastName?: string | null; email?: string | null; cellphone?: string | null; role?: string; userId?: string } | null>(null);
   sessions = signal<Array<{ id: string; storeId: string; storeName: string; stationName: string; game?: string; startedAt: Date; durationMins: number }>>([]);
   isLoading = signal(true);
 
@@ -107,8 +109,32 @@ export class LandingComponent implements OnInit, OnDestroy {
       userId: this.authService.userId() || undefined,
     });
 
+    this.fetchUserProfile();
     this.fetchActiveSessions();
     this.startExpirationCheck();
+  }
+
+  private fetchUserProfile(): void {
+    const userId = this.authService.userId();
+    if (!userId) return;
+
+    this.http.get<{ data: { firstName?: string; lastName?: string }; success: boolean }>(
+      `${this.apiUrl}/api/players/${userId}`
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const currentInfo = this.userInfo();
+          this.userInfo.set({
+            ...currentInfo,
+            firstName: response.data.firstName,
+            lastName: response.data.lastName,
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Failed to fetch user profile:', err);
+      },
+    });
   }
 
   ngOnDestroy(): void {

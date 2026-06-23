@@ -1,20 +1,31 @@
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, and, inArray, or } from 'drizzle-orm';
+import { eq, and, inArray, or, sql } from 'drizzle-orm';
 import { users, userStoreMemberships, stores } from '@org/api/db';
 
 const BCRYPT_ROUNDS = 12;
 
 export interface CreatePlayerInput {
+  firstName: string;
+  lastName: string;
   email?: string;
   cellphone?: string;
   password: string;
   storeIds: string[];
 }
 
+export interface UpdatePlayerInput {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  cellphone?: string;
+}
+
 export interface PlayerResponse {
   id: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   cellphone?: string;
   stores: Array<{ id: string; name: string; role: string }>;
@@ -68,6 +79,8 @@ export class PlayerService {
     const [newUser] = await this.db
       .insert(users)
       .values({
+        firstName: input.firstName,
+        lastName: input.lastName,
         email: normalizedEmail ?? null,
         cellphone: normalizedCellphone ?? null,
         passwordHash,
@@ -92,10 +105,64 @@ export class PlayerService {
     return this.getPlayerById(playerId);
   }
 
+  async updatePlayer(playerId: string, input: UpdatePlayerInput): Promise<PlayerResponse> {
+    const [user] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, playerId));
+
+    if (!user) {
+      throw new Error('Player not found');
+    }
+
+    // If email or cellphone are being updated, check for duplicates in other players
+    if (input.email || input.cellphone) {
+      const normalizedEmail = input.email?.toLowerCase().trim();
+      const normalizedCellphone = input.cellphone?.trim();
+
+      const conditions = [];
+      if (input.email) conditions.push(eq(users.email, normalizedEmail!));
+      if (input.cellphone) conditions.push(eq(users.cellphone, normalizedCellphone!));
+
+      let query = this.db
+        .select({ id: users.id })
+        .from(users);
+
+      if (conditions.length > 0) {
+        query = query.where(
+          and(
+            or(...conditions),
+            // Exclude current user
+          ),
+        ) as any;
+      }
+
+      const existing = await query;
+      const duplicates = existing.filter((record) => record.id !== playerId);
+
+      if (duplicates.length > 0) {
+        throw new Error('Email or phone already in use by another player');
+      }
+    }
+
+    const updateData: any = {};
+    if (input.firstName !== undefined) updateData.firstName = input.firstName;
+    if (input.lastName !== undefined) updateData.lastName = input.lastName;
+    if (input.email !== undefined) updateData.email = input.email?.toLowerCase().trim() || null;
+    if (input.cellphone !== undefined) updateData.cellphone = input.cellphone?.trim() || null;
+    updateData.updatedAt = new Date();
+
+    await this.db.update(users).set(updateData).where(eq(users.id, playerId));
+
+    return this.getPlayerById(playerId);
+  }
+
   async getAllPlayers(): Promise<PlayerResponse[]> {
     const allUsers = await this.db
       .select({
         id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
         email: users.email,
         cellphone: users.cellphone,
         createdAt: users.createdAt,
@@ -118,6 +185,8 @@ export class PlayerService {
 
       players.push({
         id: user.id,
+        firstName: user.firstName ?? undefined,
+        lastName: user.lastName ?? undefined,
         email: user.email ?? undefined,
         cellphone: user.cellphone ?? undefined,
         stores: storesForUser.map((s) => ({
@@ -158,6 +227,8 @@ export class PlayerService {
       const [user] = await this.db
         .select({
           id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
           email: users.email,
           cellphone: users.cellphone,
           createdAt: users.createdAt,
@@ -179,6 +250,8 @@ export class PlayerService {
 
         players.push({
           id: user.id,
+          firstName: user.firstName ?? undefined,
+          lastName: user.lastName ?? undefined,
           email: user.email ?? undefined,
           cellphone: user.cellphone ?? undefined,
           stores: allStores.map((s) => ({
@@ -289,6 +362,8 @@ export class PlayerService {
     const [user] = await this.db
       .select({
         id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
         email: users.email,
         cellphone: users.cellphone,
         createdAt: users.createdAt,
@@ -313,6 +388,8 @@ export class PlayerService {
 
     return {
       id: user.id,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
       email: user.email ?? undefined,
       cellphone: user.cellphone ?? undefined,
       stores: storesForUser.map((s) => ({

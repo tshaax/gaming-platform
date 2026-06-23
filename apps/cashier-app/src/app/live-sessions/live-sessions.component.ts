@@ -606,12 +606,22 @@ export class LiveSessionsComponent implements OnInit {
     console.log('Saving results for session:', sessionId);
     console.log('Result data:', result);
 
-    // Submit results without ending the session (similar to gamer-app)
+    // Save to the unified game-results endpoint
     this.http
-      .post(`${this.apiUrl}/api/gaming-sessions/${sessionId}/results`, result)
+      .post(`${this.apiUrl}/api/game-results`, {
+        sessionId: sessionId,
+        game: result.game,
+        score: result.score || 0,
+        result: result.result,
+        gameType: result.gameType,
+        opponentUserId: result.opponentUserId,
+        player1Score: result.player1Score,
+        player2Score: result.player2Score,
+        winner: result.winner,
+      })
       .subscribe({
         next: (response) => {
-          console.log('Session results captured successfully:', response);
+          console.log('Game result saved successfully:', response);
           this.showCaptureDialog.set(false);
           this.currentSessionId.set(null);
           this.currentSessionPlayer.set(undefined);
@@ -620,7 +630,8 @@ export class LiveSessionsComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to capture results:', err);
-          alert('❌ Failed to capture results. Please try again.');
+          const errorMsg = err.error?.error || 'Unknown error';
+          alert(`❌ Failed to capture results: ${errorMsg}`);
         },
       });
   }

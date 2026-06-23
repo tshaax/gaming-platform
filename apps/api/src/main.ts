@@ -8,6 +8,8 @@ import { StoreService, createStoreRouter } from '@org/api/store';
 import {
   GamingSessionService,
   createGamingSessionRouter,
+  ResultsService,
+  createResultsRouter,
 } from '@org/api/gaming-session';
 import { EventService, createEventRouter } from '@org/api/event';
 import { PlayerService, createPlayerRouter } from '@org/api/player';
@@ -85,6 +87,9 @@ app.use(
   '/api/gaming-sessions',
   createGamingSessionRouter(new GamingSessionService(pool)),
 );
+
+// Game results
+app.use('/api/game-results', createResultsRouter(new ResultsService(pool)));
 
 // Events
 app.use('/api/events', createEventRouter(new EventService(pool)));
