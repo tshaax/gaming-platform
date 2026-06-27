@@ -246,12 +246,17 @@ type CaptureMode = 'camera' | 'upload';
               </button>
               <button
                 (click)="onSave()"
-                [disabled]="!formData.game"
+                [disabled]="!formData.game || isSaving()"
                 type="button"
                 class="w-full sm:flex-1 px-4 py-3 sm:py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
               >
-                <span>✓</span>
-                <span>Save & Continue</span>
+                @if (isSaving()) {
+                  <span class="animate-spin">⟳</span>
+                  <span>Saving...</span>
+                } @else {
+                  <span>✓</span>
+                  <span>Save & Continue</span>
+                }
               </button>
             </div>
           </div>
@@ -279,6 +284,7 @@ export class OcrCaptureDialogComponent implements OnDestroy {
   ocrProgress = signal(0);
   showOcrResults = signal(false);
   detectedFields = signal<Array<{ label: string; value: string }>>([]);
+  isSaving = signal(false);
 
   formData = {
     game: '',
@@ -567,6 +573,12 @@ export class OcrCaptureDialogComponent implements OnDestroy {
   }
 
   async onSave(): Promise<void> {
+    // Prevent double submissions
+    if (this.isSaving()) {
+      console.warn('Already saving, ignoring duplicate submit');
+      return;
+    }
+
     if (!this.sessionId) {
       alert('Error: Session ID is required. Please try again.');
       return;
@@ -582,56 +594,66 @@ export class OcrCaptureDialogComponent implements OnDestroy {
       return;
     }
 
-    // Extract OCR results from detected fields
-    const ocrResults = this.detectedFields()
-      .map(f => `${f.label}: ${f.value}`)
-      .join('\n');
+    this.isSaving.set(true);
 
-    // Compress image before sending
-    let compressedImage = '';
-    if (this.capturedImageData) {
-      compressedImage = await this.compressImage(this.capturedImageData, 0.6);
-    }
+    try {
+      // Extract OCR results from detected fields
+      const ocrResults = this.detectedFields()
+        .map(f => `${f.label}: ${f.value}`)
+        .join('\n');
 
-    console.log('Saving result:', {
-      sessionId: this.sessionId,
-      game: this.formData.game,
-      score: this.formData.score,
-      result: this.formData.result,
-      hasOCR: !!ocrResults,
-      hasImage: !!compressedImage,
-    });
+      // Compress image before sending
+      let compressedImage = '';
+      if (this.capturedImageData) {
+        compressedImage = await this.compressImage(this.capturedImageData, 0.6);
+      }
 
-    this.http
-      .post<{ success: boolean; data: any; error?: string }>(
-        `${this.apiUrl}/api/game-results`,
-        {
-          sessionId: this.sessionId,
-          game: this.formData.game,
-          score: this.formData.score,
-          result: this.formData.result || undefined,
-          ocrResults: ocrResults || undefined,
-          captureImage: compressedImage || undefined,
-        },
-      )
-      .subscribe({
-        next: (response) => {
-          console.log('Save response:', response);
-          if (response.success) {
-            console.log('Result saved successfully');
-            this.save.emit(this.formData as CaptureResult);
-          } else {
-            const errorMsg = response.error || 'Unknown error';
-            console.error('Save failed:', errorMsg);
-            alert(`Failed to save result: ${errorMsg}`);
-          }
-        },
-        error: (err) => {
-          console.error('HTTP Error saving result:', err);
-          const errorMsg = err.error?.error || err.message || 'Unknown error';
-          alert(`Failed to save result to server: ${errorMsg}`);
-        },
+      console.log('Saving result:', {
+        sessionId: this.sessionId,
+        game: this.formData.game,
+        score: this.formData.score,
+        result: this.formData.result,
+        hasOCR: !!ocrResults,
+        hasImage: !!compressedImage,
       });
+
+      this.http
+        .post<{ success: boolean; data: any; error?: string }>(
+          `${this.apiUrl}/api/game-results`,
+          {
+            sessionId: this.sessionId,
+            game: this.formData.game,
+            score: this.formData.score,
+            result: this.formData.result || undefined,
+            ocrResults: ocrResults || undefined,
+            captureImage: compressedImage || undefined,
+          },
+        )
+        .subscribe({
+          next: (response) => {
+            console.log('Save response:', response);
+            if (response.success) {
+              console.log('Result saved successfully');
+              this.isSaving.set(false);
+              this.save.emit(this.formData as CaptureResult);
+            } else {
+              const errorMsg = response.error || 'Unknown error';
+              console.error('Save failed:', errorMsg);
+              alert(`Failed to save result: ${errorMsg}`);
+              this.isSaving.set(false);
+            }
+          },
+          error: (err) => {
+            console.error('HTTP Error saving result:', err);
+            const errorMsg = err.error?.error || err.message || 'Unknown error';
+            alert(`Failed to save result to server: ${errorMsg}`);
+            this.isSaving.set(false);
+          },
+        });
+    } catch (error) {
+      console.error('Error preparing save:', error);
+      this.isSaving.set(false);
+    }
   }
 
   onClose(): void {
