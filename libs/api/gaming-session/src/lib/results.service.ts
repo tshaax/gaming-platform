@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 import { gameSessionResults, gamingSessions, users } from '@org/api/db';
 
 export interface SaveResultInput {
@@ -347,7 +347,7 @@ export class ResultsService {
         and(
           eq(gamingSessions.storeId, storeId),
           eq(gameSessionResults.verificationStatus, 'pending'),
-          eq(gameSessionResults.parentId, null),
+          isNull(gameSessionResults.parentId),
         ),
       )
       .orderBy(desc(gameSessionResults.createdAt));
@@ -519,7 +519,7 @@ export class ResultsService {
       })
       .from(gameSessionResults)
       .innerJoin(gamingSessions, eq(gameSessionResults.sessionId, gamingSessions.id))
-      .where(and(eq(gamingSessions.storeId, storeId), eq(gameSessionResults.parentId, null)))
+      .where(and(eq(gamingSessions.storeId, storeId), isNull(gameSessionResults.parentId)))
       .orderBy(desc(gameSessionResults.createdAt))
       .limit(limit);
 
