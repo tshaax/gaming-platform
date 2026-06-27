@@ -600,40 +600,18 @@ export class LiveSessionsComponent implements OnInit {
   }
 
   onCaptureResultsSave(result: CaptureResult): void {
-    const sessionId = this.currentSessionId();
-    if (!sessionId) return;
+    // Results are now captured by the gamer app using OCR dialog
+    // Cashier app only verifies results, doesn't create them
+    // This prevents duplicate entries in the database
 
-    console.log('Saving results for session:', sessionId);
-    console.log('Result data:', result);
+    console.log('Result capture delegated to gamer app OCR dialog');
+    this.showCaptureDialog.set(false);
+    this.currentSessionId.set(null);
+    this.currentSessionPlayer.set(undefined);
 
-    // Save to the unified game-results endpoint
-    this.http
-      .post(`${this.apiUrl}/api/game-results`, {
-        sessionId: sessionId,
-        game: result.game,
-        score: result.score || 0,
-        result: result.result,
-        gameType: result.gameType,
-        opponentUserId: result.opponentUserId,
-        player1Score: result.player1Score,
-        player2Score: result.player2Score,
-        winner: result.winner,
-      })
-      .subscribe({
-        next: (response) => {
-          console.log('Game result saved successfully:', response);
-          this.showCaptureDialog.set(false);
-          this.currentSessionId.set(null);
-          this.currentSessionPlayer.set(undefined);
-          this.loadActiveSessions();
-          alert('✅ Game result captured successfully!\n\nNavigate to Results History to view all captured results.');
-        },
-        error: (err) => {
-          console.error('Failed to capture results:', err);
-          const errorMsg = err.error?.error || 'Unknown error';
-          alert(`❌ Failed to capture results: ${errorMsg}`);
-        },
-      });
+    alert('📸 Game results are captured in the Gamer App using OCR.\n\n✅ Please ask the gamer to capture the result with their device using the OCR capture dialog, then you can verify it in Results History.');
+
+    this.loadActiveSessions();
   }
 
   extendSession(sessionId: string): void {
