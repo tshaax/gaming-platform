@@ -42,6 +42,7 @@ export interface ResultResponse {
   verificationNotes?: string;
   createdAt: string;
   playerName: string;
+  children?: Omit<ResultResponse, 'children'>[];
 }
 
 export interface PendingResultsCount {
@@ -69,6 +70,9 @@ export class ResultsService {
       }
 
       const sessionUserId = sessions[0].userId;
+
+      // Check if this has OCR/image data - if so, create parent-child structure
+      const hasOCRData = input.ocrResults || input.captureImage;
 
       // For VS games, determine results from each player's perspective
       if (input.gameType === 'vs' && input.opponentUserId) {
@@ -159,28 +163,82 @@ export class ResultsService {
           playerName,
         };
       } else {
-        // Solo game - insert single result
-        const results = await this.db
-          .insert(gameSessionResults)
-          .values({
-            sessionId: input.sessionId,
-            game: input.game,
-            score: input.score,
-            result: input.result || null,
-            placement: input.placement || null,
-            kills: input.kills ?? 0,
-            deaths: input.deaths ?? 0,
-            assists: input.assists ?? 0,
-            gameType: input.gameType || null,
-            opponentUserId: input.opponentUserId ? input.opponentUserId : null,
-            player1Score: input.player1Score || null,
-            player2Score: input.player2Score || null,
-            winner: input.winner || null,
-            ocrResults: input.ocrResults || null,
-            captureImage: input.captureImage || null,
-            verificationStatus: 'pending',
-          })
-          .returning({
+        // Solo game - create parent result and optional child for OCR/image
+        let parentResult: any = null;
+
+        if (hasOCRData) {
+          // Create parent WITHOUT OCR/image
+          const parentResults = await this.db
+            .insert(gameSessionResults)
+            .values({
+              sessionId: input.sessionId,
+              game: input.game,
+              score: input.score,
+              result: input.result || null,
+              placement: input.placement || null,
+              kills: input.kills ?? 0,
+              deaths: input.deaths ?? 0,
+              assists: input.assists ?? 0,
+              gameType: input.gameType || null,
+              opponentUserId: input.opponentUserId ? input.opponentUserId : null,
+              player1Score: input.player1Score || null,
+              player2Score: input.player2Score || null,
+              winner: input.winner || null,
+              verificationStatus: 'pending',
+            })
+            .returning();
+
+          parentResult = parentResults[0];
+
+          // Create child WITH OCR/image linked to parent
+          await this.db
+            .insert(gameSessionResults)
+            .values({
+              sessionId: input.sessionId,
+              parentId: parentResult.id,
+              game: input.game,
+              score: input.score,
+              result: input.result || null,
+              placement: input.placement || null,
+              kills: input.kills ?? 0,
+              deaths: input.deaths ?? 0,
+              assists: input.assists ?? 0,
+              gameType: input.gameType || null,
+              opponentUserId: input.opponentUserId ? input.opponentUserId : null,
+              player1Score: input.player1Score || null,
+              player2Score: input.player2Score || null,
+              winner: input.winner || null,
+              ocrResults: input.ocrResults || null,
+              captureImage: input.captureImage || null,
+              verificationStatus: 'pending',
+            })
+            .returning();
+        } else {
+          // No OCR/image - create single result
+          const singleResults = await this.db
+            .insert(gameSessionResults)
+            .values({
+              sessionId: input.sessionId,
+              game: input.game,
+              score: input.score,
+              result: input.result || null,
+              placement: input.placement || null,
+              kills: input.kills ?? 0,
+              deaths: input.deaths ?? 0,
+              assists: input.assists ?? 0,
+              gameType: input.gameType || null,
+              opponentUserId: input.opponentUserId ? input.opponentUserId : null,
+              player1Score: input.player1Score || null,
+              player2Score: input.player2Score || null,
+              winner: input.winner || null,
+              verificationStatus: 'pending',
+            })
+            .returning();
+          parentResult = singleResults[0];
+        }
+
+        const retrievedResult = await this.db
+          .select({
             id: gameSessionResults.id,
             sessionId: gameSessionResults.sessionId,
             game: gameSessionResults.game,
@@ -191,13 +249,15 @@ export class ResultsService {
             captureImage: gameSessionResults.captureImage,
             verificationStatus: gameSessionResults.verificationStatus,
             createdAt: gameSessionResults.createdAt,
-          });
+          })
+          .from(gameSessionResults)
+          .where(eq(gameSessionResults.id, parentResult.id));
 
-        if (!results.length) {
+        if (!retrievedResult.length) {
           throw new Error('Failed to insert game result');
         }
 
-        const result = results[0];
+        const result = retrievedResult[0];
 
         // Get player info
         const playerList = await this.db
@@ -256,6 +316,7 @@ export class ResultsService {
         and(
           eq(gamingSessions.storeId, storeId),
           eq(gameSessionResults.verificationStatus, 'pending'),
+          eq(gameSessionResults.parentId, null),
         ),
       )
       .orderBy(desc(gameSessionResults.createdAt));
@@ -263,6 +324,31 @@ export class ResultsService {
     const responses: ResultResponse[] = [];
 
     for (const result of results) {
+      // Fetch children for this result
+      const children = await this.db
+        .select({
+          id: gameSessionResults.id,
+          sessionId: gameSessionResults.sessionId,
+          game: gameSessionResults.game,
+          score: gameSessionResults.score,
+          result: gameSessionResults.result,
+          placement: gameSessionResults.placement,
+          gameType: gameSessionResults.gameType,
+          opponentUserId: gameSessionResults.opponentUserId,
+          player1Score: gameSessionResults.player1Score,
+          player2Score: gameSessionResults.player2Score,
+          winner: gameSessionResults.winner,
+          ocrResults: gameSessionResults.ocrResults,
+          captureImage: gameSessionResults.captureImage,
+          verificationStatus: gameSessionResults.verificationStatus,
+          verifiedBy: gameSessionResults.verifiedBy,
+          verifiedAt: gameSessionResults.verifiedAt,
+          verificationNotes: gameSessionResults.verificationNotes,
+          createdAt: gameSessionResults.createdAt,
+        })
+        .from(gameSessionResults)
+        .where(eq(gameSessionResults.parentId, result.id));
+
       const player = await this.db
         .select({ firstName: users.firstName, lastName: users.lastName })
         .from(users)
@@ -315,6 +401,28 @@ export class ResultsService {
         createdAt: result.createdAt.toISOString(),
         playerName,
         opponentName,
+        children: children.length > 0 ? children.map(c => ({
+          id: c.id,
+          sessionId: c.sessionId,
+          game: c.game,
+          score: c.score || 0,
+          result: c.result,
+          placement: c.placement || undefined,
+          gameType: c.gameType,
+          opponentUserId: c.opponentUserId,
+          player1Score: c.player1Score,
+          player2Score: c.player2Score,
+          winner: c.winner,
+          ocrResults: c.ocrResults || undefined,
+          captureImage: c.captureImage || undefined,
+          verificationStatus: c.verificationStatus,
+          verifiedBy: c.verifiedBy || undefined,
+          verifiedAt: c.verifiedAt?.toISOString(),
+          verificationNotes: c.verificationNotes || undefined,
+          createdAt: c.createdAt.toISOString(),
+          playerName,
+          opponentName,
+        })) : undefined,
       });
     }
 
@@ -380,13 +488,38 @@ export class ResultsService {
       })
       .from(gameSessionResults)
       .innerJoin(gamingSessions, eq(gameSessionResults.sessionId, gamingSessions.id))
-      .where(eq(gamingSessions.storeId, storeId))
+      .where(and(eq(gamingSessions.storeId, storeId), eq(gameSessionResults.parentId, null)))
       .orderBy(desc(gameSessionResults.createdAt))
       .limit(limit);
 
     const responses: ResultResponse[] = [];
 
     for (const result of results) {
+      // Fetch children for this result
+      const children = await this.db
+        .select({
+          id: gameSessionResults.id,
+          sessionId: gameSessionResults.sessionId,
+          game: gameSessionResults.game,
+          score: gameSessionResults.score,
+          result: gameSessionResults.result,
+          placement: gameSessionResults.placement,
+          gameType: gameSessionResults.gameType,
+          opponentUserId: gameSessionResults.opponentUserId,
+          player1Score: gameSessionResults.player1Score,
+          player2Score: gameSessionResults.player2Score,
+          winner: gameSessionResults.winner,
+          ocrResults: gameSessionResults.ocrResults,
+          captureImage: gameSessionResults.captureImage,
+          verificationStatus: gameSessionResults.verificationStatus,
+          verifiedBy: gameSessionResults.verifiedBy,
+          verifiedAt: gameSessionResults.verifiedAt,
+          verificationNotes: gameSessionResults.verificationNotes,
+          createdAt: gameSessionResults.createdAt,
+        })
+        .from(gameSessionResults)
+        .where(eq(gameSessionResults.parentId, result.id));
+
       const player = await this.db
         .select({ firstName: users.firstName, lastName: users.lastName })
         .from(users)
@@ -439,6 +572,28 @@ export class ResultsService {
         createdAt: result.createdAt.toISOString(),
         playerName,
         opponentName,
+        children: children.length > 0 ? children.map(c => ({
+          id: c.id,
+          sessionId: c.sessionId,
+          game: c.game,
+          score: c.score || 0,
+          result: c.result,
+          placement: c.placement || undefined,
+          gameType: c.gameType,
+          opponentUserId: c.opponentUserId,
+          player1Score: c.player1Score,
+          player2Score: c.player2Score,
+          winner: c.winner,
+          ocrResults: c.ocrResults || undefined,
+          captureImage: c.captureImage || undefined,
+          verificationStatus: c.verificationStatus,
+          verifiedBy: c.verifiedBy || undefined,
+          verifiedAt: c.verifiedAt?.toISOString(),
+          verificationNotes: c.verificationNotes || undefined,
+          createdAt: c.createdAt.toISOString(),
+          playerName,
+          opponentName,
+        })) : undefined,
       });
     }
 

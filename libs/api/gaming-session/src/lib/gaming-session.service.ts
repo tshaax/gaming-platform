@@ -407,7 +407,7 @@ export class GamingSessionService {
   async createSessionResult(sessionId: string, data: ResultInput): Promise<unknown> {
     try {
       // Always include all fields - use NULL for empty optional fields to avoid Drizzle DEFAULT issues
-      const [result] = await this.db
+      const results = await this.db
         .insert(gameSessionResults)
         .values({
           sessionId,
@@ -426,7 +426,7 @@ export class GamingSessionService {
         })
         .returning();
 
-      return result;
+      return Array.isArray(results) ? results[0] : results;
     } catch (error: any) {
       console.error('[GameSessionResult Insert Error]', {
         message: error.message,

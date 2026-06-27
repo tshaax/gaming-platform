@@ -284,6 +284,7 @@ export const gameSessionResults = pgTable(
   {
     id:                 uuid('id').primaryKey().defaultRandom(),
     sessionId:          uuid('session_id').notNull().references(() => gamingSessions.id, { onDelete: 'cascade' }),
+    parentId:           uuid('parent_id').references(() => gameSessionResults.id, { onDelete: 'cascade' }),
     game:               varchar('game', { length: 255 }),
     score:              integer('score'),
     placement:          integer('placement'),
@@ -306,6 +307,7 @@ export const gameSessionResults = pgTable(
   },
   (table) => [
     index('idx_game_session_results_session_id').on(table.sessionId),
+    index('idx_game_session_results_parent_id').on(table.parentId),
     index('idx_game_session_results_opponent_user_id').on(table.opponentUserId),
     index('idx_game_session_results_verification_status').on(table.verificationStatus),
   ],
