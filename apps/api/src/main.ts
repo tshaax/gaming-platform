@@ -30,7 +30,7 @@ const port = process.env.PORT ? Number(process.env.PORT) : 8080;
 
 // Initialize express app
 const app = express();
-const productsService = new ProductsService();
+
 
 // Middleware setup
 app.use(express.json());

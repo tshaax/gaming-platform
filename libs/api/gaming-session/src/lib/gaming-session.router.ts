@@ -66,47 +66,48 @@ interface ExtendSessionRequest {
   additionalMins: number;
 }
 
-export function createGamingSessionRouter(gamingSessionService: GamingSessionService): Router {
+export function createGamingSessionRouter(
+  gamingSessionService: GamingSessionService,
+): Router {
   const router = Router();
 
   // Create gaming session
-  router.post(
-    '/',
-    authenticate,
-    async (req: Request, res: Response) => {
-      try {
-        const user = (req as any).user;
-        const storeId = user.storeId;
-        const input = req.body as CreateSessionRequest;
+  router.post('/', authenticate, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      const storeId = user.storeId;
+      const input = req.body as CreateSessionRequest;
 
-        // Use userId from request body (for cashiers creating sessions for players)
-        // or fall back to JWT token's sub (for players creating their own sessions)
-        const userId = input.userId || user.sub;
+      // Use userId from request body (for cashiers creating sessions for players)
+      // or fall back to JWT token's sub (for players creating their own sessions)
+      const userId = input.userId || user.sub;
 
-        const session = await gamingSessionService.createGamingSession({
-          storeId,
-          userId,
-          stationId: input.stationId,
-          durationMins: input.durationMins,
-          ratePerHour: input.ratePerHour,
-          opponentType: input.opponentType,
-          eventId: input.eventId,
-          notes: input.notes,
-        });
+      const session = await gamingSessionService.createGamingSession({
+        storeId,
+        userId,
+        stationId: input.stationId,
+        durationMins: input.durationMins,
+        ratePerHour: input.ratePerHour,
+        opponentType: input.opponentType,
+        eventId: input.eventId,
+        notes: input.notes,
+      });
 
-        const body: ApiResponse<typeof session> = { data: session, success: true };
-        res.status(201).json(body);
-      } catch (err: unknown) {
-        const error = err as Error;
-        console.error('[Gaming Session Error]', error);
-        res.status(500).json({
-          data: null,
-          success: false,
-          error: error.message || 'Failed to create gaming session',
-        });
-      }
-    },
-  );
+      const body: ApiResponse<typeof session> = {
+        data: session,
+        success: true,
+      };
+      res.status(201).json(body);
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('[Gaming Session Error]', error);
+      res.status(500).json({
+        data: null,
+        success: false,
+        error: error.message || 'Failed to create gaming session',
+      });
+    }
+  });
 
   // Get gaming sessions by store
   router.get(
@@ -115,8 +116,12 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     async (req: Request, res: Response) => {
       try {
         const { storeId } = req.params;
-        const sessions = await gamingSessionService.getGamingSessionsByStore(storeId);
-        const body: ApiResponse<typeof sessions> = { data: sessions, success: true };
+        const sessions =
+          await gamingSessionService.getGamingSessionsByStore(storeId);
+        const body: ApiResponse<typeof sessions> = {
+          data: sessions,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -130,26 +135,28 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
   );
 
   // Get gaming sessions by user
-  router.get(
-    '/user',
-    authenticate,
-    async (req: Request, res: Response) => {
-      try {
-        const user = (req as any).user;
-        const storeId = user.storeId;
-        const sessions = await gamingSessionService.getGamingSessionsByUser(user.sub, storeId);
-        const body: ApiResponse<typeof sessions> = { data: sessions, success: true };
-        res.json(body);
-      } catch (err: unknown) {
-        const error = err as Error;
-        res.status(500).json({
-          data: null,
-          success: false,
-          error: error.message || 'Failed to fetch gaming sessions',
-        });
-      }
-    },
-  );
+  router.get('/user', authenticate, async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      const storeId = user.storeId;
+      const sessions = await gamingSessionService.getGamingSessionsByUser(
+        user.sub,
+        storeId,
+      );
+      const body: ApiResponse<typeof sessions> = {
+        data: sessions,
+        success: true,
+      };
+      res.json(body);
+    } catch (err: unknown) {
+      const error = err as Error;
+      res.status(500).json({
+        data: null,
+        success: false,
+        error: error.message || 'Failed to fetch gaming sessions',
+      });
+    }
+  });
 
   // Get active sessions for current user
   router.get(
@@ -158,8 +165,13 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     async (req: Request, res: Response) => {
       try {
         const user = (req as any).user;
-        const sessions = await gamingSessionService.getActiveSessionsForUser(user.sub);
-        const body: ApiResponse<typeof sessions> = { data: sessions, success: true };
+        const sessions = await gamingSessionService.getActiveSessionsForUser(
+          user.sub,
+        );
+        const body: ApiResponse<typeof sessions> = {
+          data: sessions,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -186,7 +198,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           input.game,
           input.opponentUserId,
         );
-        const body: ApiResponse<typeof session> = { data: session, success: true };
+        const body: ApiResponse<typeof session> = {
+          data: session,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -224,7 +239,7 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           winner: input.winner,
         });
 
-        const body: ApiResponse<typeof result> = { data: result, success: true };
+        const body: ApiResponse<typeof result> = { data: input, success: true };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -263,9 +278,13 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
         });
 
         // End the session
-        const endedSession = await gamingSessionService.endGamingSession(sessionId);
+        const endedSession =
+          await gamingSessionService.endGamingSession(sessionId);
 
-        const body: ApiResponse<typeof endedSession> = { data: endedSession, success: true };
+        const body: ApiResponse<typeof endedSession> = {
+          data: endedSession,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -286,7 +305,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
       try {
         const { sessionId } = req.params;
         const results = await gamingSessionService.getSessionResult(sessionId);
-        const body: ApiResponse<typeof results> = { data: results, success: true };
+        const body: ApiResponse<typeof results> = {
+          data: results,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -308,17 +330,23 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
         const { resultId } = req.params;
         const input = req.body as SubmitResultRequest;
 
-        const updated = await gamingSessionService.updateSessionResult(resultId, {
-          game: input.game,
-          score: input.score,
-          placement: input.placement,
-          result: input.result,
-          kills: input.kills,
-          deaths: input.deaths,
-          assists: input.assists,
-        });
+        const updated = await gamingSessionService.updateSessionResult(
+          resultId,
+          {
+            game: input.game,
+            score: input.score,
+            placement: input.placement,
+            result: input.result,
+            kills: input.kills,
+            deaths: input.deaths,
+            assists: input.assists,
+          },
+        );
 
-        const body: ApiResponse<typeof updated> = { data: updated, success: true };
+        const body: ApiResponse<typeof updated> = {
+          data: updated,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -339,7 +367,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
       try {
         const { sessionId } = req.params;
         const session = await gamingSessionService.endGamingSession(sessionId);
-        const body: ApiResponse<typeof session> = { data: session, success: true };
+        const body: ApiResponse<typeof session> = {
+          data: session,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -370,8 +401,14 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           return;
         }
 
-        const session = await gamingSessionService.extendGamingSession(sessionId, input.additionalMins);
-        const body: ApiResponse<typeof session> = { data: session, success: true };
+        const session = await gamingSessionService.extendGamingSession(
+          sessionId,
+          input.additionalMins,
+        );
+        const body: ApiResponse<typeof session> = {
+          data: session,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -391,8 +428,12 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     async (req: Request, res: Response) => {
       try {
         const { storeId } = req.params;
-        const stations = await gamingSessionService.getGamingStationsByStore(storeId);
-        const body: ApiResponse<typeof stations> = { data: stations, success: true };
+        const stations =
+          await gamingSessionService.getGamingStationsByStore(storeId);
+        const body: ApiResponse<typeof stations> = {
+          data: stations,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -423,8 +464,14 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           return;
         }
 
-        const station = await gamingSessionService.createGamingStation(storeId, input.name);
-        const body: ApiResponse<typeof station> = { data: station, success: true };
+        const station = await gamingSessionService.createGamingStation(
+          storeId,
+          input.name,
+        );
+        const body: ApiResponse<typeof station> = {
+          data: station,
+          success: true,
+        };
         res.status(201).json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -467,7 +514,8 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
         const { storeId } = req.params;
         // Get pricing options and map to duration format
         // This eliminates duplication and keeps duration/rate aligned
-        const pricingOptions = await gamingSessionService.getPricingOptionsByStore(storeId);
+        const pricingOptions =
+          await gamingSessionService.getPricingOptionsByStore(storeId);
         const durations = pricingOptions.map((p: any) => ({
           id: p.id,
           minutes: p.durationMins,
@@ -476,7 +524,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           ratePerHour: p.ratePerHour,
           label: p.label,
         }));
-        const body: ApiResponse<typeof durations> = { data: durations, success: true };
+        const body: ApiResponse<typeof durations> = {
+          data: durations,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -507,8 +558,14 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           return;
         }
 
-        const option = await gamingSessionService.createDurationOption(storeId, input.minutes);
-        const body: ApiResponse<typeof option> = { data: option, success: true };
+        const option = await gamingSessionService.createDurationOption(
+          storeId,
+          input.minutes,
+        );
+        const body: ApiResponse<typeof option> = {
+          data: option,
+          success: true,
+        };
         res.status(201).json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -549,8 +606,12 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     async (req: Request, res: Response) => {
       try {
         const { storeId } = req.params;
-        const options = await gamingSessionService.getRateOptionsByStore(storeId);
-        const body: ApiResponse<typeof options> = { data: options, success: true };
+        const options =
+          await gamingSessionService.getRateOptionsByStore(storeId);
+        const body: ApiResponse<typeof options> = {
+          data: options,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -586,7 +647,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           input.ratePerHour,
           input.label,
         );
-        const body: ApiResponse<typeof option> = { data: option, success: true };
+        const body: ApiResponse<typeof option> = {
+          data: option,
+          success: true,
+        };
         res.status(201).json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -627,8 +691,12 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
     async (req: Request, res: Response) => {
       try {
         const { storeId } = req.params;
-        const options = await gamingSessionService.getPricingOptionsByStore(storeId);
-        const body: ApiResponse<typeof options> = { data: options, success: true };
+        const options =
+          await gamingSessionService.getPricingOptionsByStore(storeId);
+        const body: ApiResponse<typeof options> = {
+          data: options,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -665,7 +733,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
           input.ratePerHour,
           input.label,
         );
-        const body: ApiResponse<typeof option> = { data: option, success: true };
+        const body: ApiResponse<typeof option> = {
+          data: option,
+          success: true,
+        };
         res.status(201).json(body);
       } catch (err: unknown) {
         const error = err as Error;
@@ -707,7 +778,10 @@ export function createGamingSessionRouter(gamingSessionService: GamingSessionSer
       try {
         const { storeId } = req.params;
         const gamesList = await gamingSessionService.getGamesByStore(storeId);
-        const body: ApiResponse<typeof gamesList> = { data: gamesList, success: true };
+        const body: ApiResponse<typeof gamesList> = {
+          data: gamesList,
+          success: true,
+        };
         res.json(body);
       } catch (err: unknown) {
         const error = err as Error;
