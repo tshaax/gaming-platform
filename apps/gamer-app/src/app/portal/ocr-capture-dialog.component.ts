@@ -287,6 +287,7 @@ export class OcrCaptureDialogComponent implements OnDestroy {
   };
 
   private mediaStream: MediaStream | null = null;
+  private capturedImageData: string = '';
 
   ngOnDestroy(): void {
     this.stopCamera();
@@ -360,6 +361,7 @@ export class OcrCaptureDialogComponent implements OnDestroy {
   private async runOcr(imageSource: string): Promise<void> {
     this.isProcessing.set(true);
     this.ocrProgress.set(0);
+    this.capturedImageData = imageSource;
 
     try {
       const { data: { text } } = await Tesseract.recognize(imageSource, 'eng', {
@@ -377,6 +379,38 @@ export class OcrCaptureDialogComponent implements OnDestroy {
       this.isProcessing.set(false);
       this.ocrProgress.set(0);
     }
+  }
+
+  private compressImage(imageData: string, quality: number = 0.7): Promise<string> {
+    return new Promise<string>((resolve) => {
+      try {
+        const img = new Image();
+        img.src = imageData;
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(imageData);
+            return;
+          }
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          try {
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } catch {
+            resolve(imageData);
+          }
+        };
+        img.onerror = () => resolve(imageData);
+      } catch {
+        resolve(imageData);
+      }
+    });
   }
 
   private parseOcrText(text: string): void {
@@ -532,7 +566,7 @@ export class OcrCaptureDialogComponent implements OnDestroy {
     };
   }
 
-  onSave(): void {
+  async onSave(): Promise<void> {
     if (!this.sessionId) {
       alert('Error: Session ID is required. Please try again.');
       return;
@@ -548,11 +582,24 @@ export class OcrCaptureDialogComponent implements OnDestroy {
       return;
     }
 
+    // Extract OCR results from detected fields
+    const ocrResults = this.detectedFields()
+      .map(f => `${f.label}: ${f.value}`)
+      .join('\n');
+
+    // Compress image before sending
+    let compressedImage = '';
+    if (this.capturedImageData) {
+      compressedImage = await this.compressImage(this.capturedImageData, 0.6);
+    }
+
     console.log('Saving result:', {
       sessionId: this.sessionId,
       game: this.formData.game,
       score: this.formData.score,
       result: this.formData.result,
+      hasOCR: !!ocrResults,
+      hasImage: !!compressedImage,
     });
 
     this.http
@@ -563,6 +610,8 @@ export class OcrCaptureDialogComponent implements OnDestroy {
           game: this.formData.game,
           score: this.formData.score,
           result: this.formData.result || undefined,
+          ocrResults: ocrResults || undefined,
+          captureImage: compressedImage || undefined,
         },
       )
       .subscribe({

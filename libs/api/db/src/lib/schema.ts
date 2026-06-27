@@ -296,6 +296,8 @@ export const gameSessionResults = pgTable(
     player1Score:       integer('player1_score'),
     player2Score:       integer('player2_score'),
     winner:             varchar('winner', { length: 20 }),
+    ocrResults:         text('ocr_results'),
+    captureImage:       text('capture_image'),
     verificationStatus: varchar('verification_status', { length: 20 }).default('pending'),
     verifiedBy:         uuid('verified_by').references(() => users.id, { onDelete: 'set null' }),
     verifiedAt:         tstz('verified_at'),

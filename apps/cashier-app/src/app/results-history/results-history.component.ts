@@ -20,6 +20,8 @@ interface GameResult {
   player1Score?: number;
   player2Score?: number;
   winner?: string;
+  ocrResults?: string;
+  captureImage?: string;
   verificationStatus: 'pending' | 'approved' | 'rejected';
   verifiedBy?: string;
   verifiedAt?: string;
@@ -317,18 +319,44 @@ interface GameResult {
 
       <!-- Verify Dialog -->
       @if (showVerifyDialog()) {
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/20 max-w-md w-full p-6 shadow-2xl">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-white/20 max-w-2xl w-full p-6 shadow-2xl my-8">
             <h2 class="text-xl font-bold text-white mb-4">Verify Result</h2>
 
             @if (selectedResult()) {
-              <div class="space-y-4 mb-6">
-                <div>
+              <div class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                <!-- Result Details -->
+                <div class="bg-slate-700/30 rounded-lg p-4 border border-white/10">
                   <p class="text-slate-400 text-sm">Player: <span class="text-white font-semibold">{{ selectedResult()?.playerName }}</span></p>
                   <p class="text-slate-400 text-sm">Game: <span class="text-white font-semibold">{{ selectedResult()?.game }}</span></p>
                   <p class="text-slate-400 text-sm">Score: <span class="text-white font-semibold">{{ selectedResult()?.score }}</span></p>
                 </div>
 
+                <!-- OCR Results Section -->
+                @if (selectedResult()?.ocrResults) {
+                  <div class="bg-blue-600/20 rounded-lg p-4 border border-blue-400/30">
+                    <h3 class="text-blue-300 font-semibold text-sm mb-2">📄 OCR Results</h3>
+                    <div class="bg-slate-900/50 rounded p-3 max-h-32 overflow-y-auto">
+                      <p class="text-slate-200 text-xs whitespace-pre-wrap font-mono">{{ selectedResult()?.ocrResults }}</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Captured Image Section -->
+                @if (selectedResult()?.captureImage) {
+                  <div class="bg-purple-600/20 rounded-lg p-4 border border-purple-400/30">
+                    <h3 class="text-purple-300 font-semibold text-sm mb-2">📸 Captured Image</h3>
+                    <div class="rounded overflow-hidden bg-black/30">
+                      <img
+                        [src]="selectedResult()?.captureImage"
+                        alt="Captured result image"
+                        class="w-full h-auto max-h-64 object-contain"
+                      />
+                    </div>
+                  </div>
+                }
+
+                <!-- Verification Notes -->
                 <div>
                   <label class="block text-sm font-medium text-slate-300 mb-2">Verification Notes (Optional)</label>
                   <textarea
@@ -339,6 +367,7 @@ interface GameResult {
                   ></textarea>
                 </div>
 
+                <!-- Action Buttons -->
                 <div class="flex gap-2">
                   <button
                     (click)="approveResult()"

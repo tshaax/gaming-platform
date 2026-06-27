@@ -17,6 +17,8 @@ export interface SaveResultInput {
   player1Score?: number;
   player2Score?: number;
   winner?: string;
+  ocrResults?: string;
+  captureImage?: string;
 }
 
 export interface ResultResponse {
@@ -32,6 +34,8 @@ export interface ResultResponse {
   player1Score?: number;
   player2Score?: number;
   winner?: string;
+  ocrResults?: string;
+  captureImage?: string;
   verificationStatus: string;
   verifiedBy?: string;
   verifiedAt?: string;
@@ -102,6 +106,8 @@ export class ResultsService {
             player1Score: input.player1Score || null,
             player2Score: input.player2Score || null,
             winner: input.winner || null,
+            ocrResults: input.ocrResults || null,
+            captureImage: input.captureImage || null,
             verificationStatus: 'pending',
           })
           .returning({
@@ -116,6 +122,8 @@ export class ResultsService {
             player1Score: gameSessionResults.player1Score,
             player2Score: gameSessionResults.player2Score,
             winner: gameSessionResults.winner,
+            ocrResults: gameSessionResults.ocrResults,
+            captureImage: gameSessionResults.captureImage,
             verificationStatus: gameSessionResults.verificationStatus,
             createdAt: gameSessionResults.createdAt,
           });
@@ -168,6 +176,8 @@ export class ResultsService {
             player1Score: input.player1Score || null,
             player2Score: input.player2Score || null,
             winner: input.winner || null,
+            ocrResults: input.ocrResults || null,
+            captureImage: input.captureImage || null,
             verificationStatus: 'pending',
           })
           .returning({
@@ -177,6 +187,8 @@ export class ResultsService {
             score: gameSessionResults.score,
             result: gameSessionResults.result,
             placement: gameSessionResults.placement,
+            ocrResults: gameSessionResults.ocrResults,
+            captureImage: gameSessionResults.captureImage,
             verificationStatus: gameSessionResults.verificationStatus,
             createdAt: gameSessionResults.createdAt,
           });
@@ -229,6 +241,8 @@ export class ResultsService {
         player1Score: gameSessionResults.player1Score,
         player2Score: gameSessionResults.player2Score,
         winner: gameSessionResults.winner,
+        ocrResults: gameSessionResults.ocrResults,
+        captureImage: gameSessionResults.captureImage,
         verificationStatus: gameSessionResults.verificationStatus,
         verifiedBy: gameSessionResults.verifiedBy,
         verifiedAt: gameSessionResults.verifiedAt,
@@ -292,6 +306,8 @@ export class ResultsService {
         player1Score: result.player1Score,
         player2Score: result.player2Score,
         winner: result.winner,
+        ocrResults: result.ocrResults || undefined,
+        captureImage: result.captureImage || undefined,
         verificationStatus: result.verificationStatus,
         verifiedBy: result.verifiedBy || undefined,
         verifiedAt: result.verifiedAt?.toISOString(),
@@ -353,6 +369,8 @@ export class ResultsService {
         player1Score: gameSessionResults.player1Score,
         player2Score: gameSessionResults.player2Score,
         winner: gameSessionResults.winner,
+        ocrResults: gameSessionResults.ocrResults,
+        captureImage: gameSessionResults.captureImage,
         verificationStatus: gameSessionResults.verificationStatus,
         verifiedBy: gameSessionResults.verifiedBy,
         verifiedAt: gameSessionResults.verifiedAt,
@@ -412,6 +430,8 @@ export class ResultsService {
         player1Score: result.player1Score,
         player2Score: result.player2Score,
         winner: result.winner,
+        ocrResults: result.ocrResults || undefined,
+        captureImage: result.captureImage || undefined,
         verificationStatus: result.verificationStatus,
         verifiedBy: result.verifiedBy || undefined,
         verifiedAt: result.verifiedAt?.toISOString(),

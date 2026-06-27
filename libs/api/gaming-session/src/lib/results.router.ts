@@ -16,6 +16,8 @@ const saveResultSchema = z.object({
   player1Score: z.number().int().optional(),
   player2Score: z.number().int().optional(),
   winner: z.string().optional(),
+  ocrResults: z.string().optional(),
+  captureImage: z.string().optional(),
 });
 
 export function createResultsRouter(service: ResultsService): Router {
