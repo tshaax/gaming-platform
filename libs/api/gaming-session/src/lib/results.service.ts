@@ -93,47 +93,78 @@ export class ResultsService {
           }
         }
 
-        // Create result for player 1 (session player)
-        const player1Results = await this.db
-          .insert(gameSessionResults)
-          .values({
-            sessionId: input.sessionId,
-            game: input.game,
-            score: input.player1Score || 0,
-            result: player1Result,
-            placement: input.placement || null,
-            kills: input.kills ?? 0,
-            deaths: input.deaths ?? 0,
-            assists: input.assists ?? 0,
-            gameType: 'vs',
-            opponentUserId: input.opponentUserId,
-            player1Score: input.player1Score || null,
-            player2Score: input.player2Score || null,
-            winner: input.winner || null,
-            ocrResults: input.ocrResults || null,
-            captureImage: input.captureImage || null,
-            verificationStatus: 'pending',
-          })
-          .returning({
-            id: gameSessionResults.id,
-            sessionId: gameSessionResults.sessionId,
-            game: gameSessionResults.game,
-            score: gameSessionResults.score,
-            result: gameSessionResults.result,
-            placement: gameSessionResults.placement,
-            gameType: gameSessionResults.gameType,
-            opponentUserId: gameSessionResults.opponentUserId,
-            player1Score: gameSessionResults.player1Score,
-            player2Score: gameSessionResults.player2Score,
-            winner: gameSessionResults.winner,
-            ocrResults: gameSessionResults.ocrResults,
-            captureImage: gameSessionResults.captureImage,
-            verificationStatus: gameSessionResults.verificationStatus,
-            createdAt: gameSessionResults.createdAt,
-          });
+        // Create result for player 1 (session player) - use parent-child structure like solo
+        let vsParentResult: any = null;
 
-        if (!player1Results.length) {
-          throw new Error('Failed to insert player 1 result');
+        if (hasOCRData) {
+          // Create parent WITHOUT OCR/image
+          const vsParentResults = await this.db
+            .insert(gameSessionResults)
+            .values({
+              sessionId: input.sessionId,
+              game: input.game,
+              score: input.player1Score || 0,
+              result: player1Result,
+              placement: input.placement || null,
+              kills: input.kills ?? 0,
+              deaths: input.deaths ?? 0,
+              assists: input.assists ?? 0,
+              gameType: 'vs',
+              opponentUserId: input.opponentUserId,
+              player1Score: input.player1Score || null,
+              player2Score: input.player2Score || null,
+              winner: input.winner || null,
+              verificationStatus: 'pending',
+            })
+            .returning();
+
+          vsParentResult = vsParentResults[0];
+
+          // Create child WITH OCR/image linked to parent
+          await this.db
+            .insert(gameSessionResults)
+            .values({
+              sessionId: input.sessionId,
+              parentId: vsParentResult.id,
+              game: input.game,
+              score: input.player1Score || 0,
+              result: player1Result,
+              placement: input.placement || null,
+              kills: input.kills ?? 0,
+              deaths: input.deaths ?? 0,
+              assists: input.assists ?? 0,
+              gameType: 'vs',
+              opponentUserId: input.opponentUserId,
+              player1Score: input.player1Score || null,
+              player2Score: input.player2Score || null,
+              winner: input.winner || null,
+              ocrResults: input.ocrResults || null,
+              captureImage: input.captureImage || null,
+              verificationStatus: 'pending',
+            })
+            .returning();
+        } else {
+          // No OCR/image - create single result
+          const vsSingleResults = await this.db
+            .insert(gameSessionResults)
+            .values({
+              sessionId: input.sessionId,
+              game: input.game,
+              score: input.player1Score || 0,
+              result: player1Result,
+              placement: input.placement || null,
+              kills: input.kills ?? 0,
+              deaths: input.deaths ?? 0,
+              assists: input.assists ?? 0,
+              gameType: 'vs',
+              opponentUserId: input.opponentUserId,
+              player1Score: input.player1Score || null,
+              player2Score: input.player2Score || null,
+              winner: input.winner || null,
+              verificationStatus: 'pending',
+            })
+            .returning();
+          vsParentResult = vsSingleResults[0];
         }
 
         // Get player 1 info
@@ -147,19 +178,19 @@ export class ResultsService {
           : 'Unknown';
 
         return {
-          id: player1Results[0].id,
-          sessionId: player1Results[0].sessionId,
-          game: player1Results[0].game,
-          score: player1Results[0].score || 0,
-          result: player1Results[0].result || undefined,
-          placement: player1Results[0].placement || undefined,
-          gameType: player1Results[0].gameType,
-          opponentUserId: player1Results[0].opponentUserId,
-          player1Score: player1Results[0].player1Score,
-          player2Score: player1Results[0].player2Score,
-          winner: player1Results[0].winner,
-          verificationStatus: player1Results[0].verificationStatus,
-          createdAt: player1Results[0].createdAt.toISOString(),
+          id: vsParentResult.id,
+          sessionId: vsParentResult.sessionId,
+          game: vsParentResult.game,
+          score: vsParentResult.score || 0,
+          result: vsParentResult.result || undefined,
+          placement: vsParentResult.placement || undefined,
+          gameType: vsParentResult.gameType,
+          opponentUserId: vsParentResult.opponentUserId,
+          player1Score: vsParentResult.player1Score,
+          player2Score: vsParentResult.player2Score,
+          winner: vsParentResult.winner,
+          verificationStatus: vsParentResult.verificationStatus,
+          createdAt: vsParentResult.createdAt.toISOString(),
           playerName,
         };
       } else {
