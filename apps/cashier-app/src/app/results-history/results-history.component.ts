@@ -28,6 +28,7 @@ interface GameResult {
   verificationNotes?: string;
   createdAt: string;
   playerName: string;
+  children?: Omit<GameResult, 'children'>[];
 }
 
 @Component({
@@ -332,23 +333,23 @@ interface GameResult {
                   <p class="text-slate-400 text-sm">Score: <span class="text-white font-semibold">{{ selectedResult()?.score }}</span></p>
                 </div>
 
-                <!-- OCR Results Section -->
-                @if (selectedResult()?.ocrResults) {
+                <!-- OCR Results Section - from child -->
+                @if (getChildOcrResults()) {
                   <div class="bg-blue-600/20 rounded-lg p-4 border border-blue-400/30">
                     <h3 class="text-blue-300 font-semibold text-sm mb-2">📄 OCR Results</h3>
                     <div class="bg-slate-900/50 rounded p-3 max-h-32 overflow-y-auto">
-                      <p class="text-slate-200 text-xs whitespace-pre-wrap font-mono">{{ selectedResult()?.ocrResults }}</p>
+                      <p class="text-slate-200 text-xs whitespace-pre-wrap font-mono">{{ getChildOcrResults() }}</p>
                     </div>
                   </div>
                 }
 
-                <!-- Captured Image Section -->
-                @if (selectedResult()?.captureImage) {
+                <!-- Captured Image Section - from child -->
+                @if (getChildCaptureImage()) {
                   <div class="bg-purple-600/20 rounded-lg p-4 border border-purple-400/30">
                     <h3 class="text-purple-300 font-semibold text-sm mb-2">📸 Captured Image</h3>
                     <div class="rounded overflow-hidden bg-black/30">
                       <img
-                        [src]="selectedResult()?.captureImage"
+                        [src]="getChildCaptureImage()"
                         alt="Captured result image"
                         class="w-full h-auto max-h-64 object-contain"
                       />
@@ -491,6 +492,22 @@ export class ResultsHistoryComponent implements OnInit {
     this.showVerifyDialog.set(false);
     this.selectedResult.set(null);
     this.verificationNotes = '';
+  }
+
+  getChildOcrResults(): string | null {
+    const result = this.selectedResult();
+    if (!result || !result.children || result.children.length === 0) {
+      return null;
+    }
+    return result.children[0].ocrResults || null;
+  }
+
+  getChildCaptureImage(): string | null {
+    const result = this.selectedResult();
+    if (!result || !result.children || result.children.length === 0) {
+      return null;
+    }
+    return result.children[0].captureImage || null;
   }
 
   approveResult(): void {
