@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import {
   gamingSessions,
   gamingStations,
@@ -151,7 +151,7 @@ export class GamingSessionService {
   }
 
   async getGamingSessionsByUser(userId: string, storeId: string): Promise<any[]> {
-    return this.db
+    const sessions = await this.db
       .select({
         id: gamingSessions.id,
         storeId: gamingSessions.storeId,
@@ -169,22 +169,47 @@ export class GamingSessionService {
         endedAt: gamingSessions.endedAt,
         createdAt: gamingSessions.createdAt,
         updatedAt: gamingSessions.updatedAt,
-        resultId: gameSessionResults.id,
-        result: gameSessionResults.result,
-        score: gameSessionResults.score,
-        placement: gameSessionResults.placement,
-        kills: gameSessionResults.kills,
-        deaths: gameSessionResults.deaths,
-        assists: gameSessionResults.assists,
       })
       .from(gamingSessions)
-      .leftJoin(gameSessionResults, eq(gamingSessions.id, gameSessionResults.sessionId))
       .where(
         and(
           eq(gamingSessions.userId, userId),
           eq(gamingSessions.storeId, storeId),
         ),
       );
+
+    // Get latest result for each session
+    const sessionsWithResults = await Promise.all(
+      sessions.map(async (session) => {
+        const [latestResult] = await this.db
+          .select({
+            resultId: gameSessionResults.id,
+            result: gameSessionResults.result,
+            score: gameSessionResults.score,
+            placement: gameSessionResults.placement,
+            kills: gameSessionResults.kills,
+            deaths: gameSessionResults.deaths,
+            assists: gameSessionResults.assists,
+          })
+          .from(gameSessionResults)
+          .where(eq(gameSessionResults.sessionId, session.id))
+          .orderBy(desc(gameSessionResults.createdAt))
+          .limit(1);
+
+        return {
+          ...session,
+          resultId: latestResult?.resultId,
+          result: latestResult?.result,
+          score: latestResult?.score,
+          placement: latestResult?.placement,
+          kills: latestResult?.kills,
+          deaths: latestResult?.deaths,
+          assists: latestResult?.assists,
+        };
+      }),
+    );
+
+    return sessionsWithResults;
   }
 
   async endGamingSession(sessionId: string): Promise<GamingSession> {
