@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, computed, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import Tesseract from 'tesseract.js';
 
 export interface CaptureResult {
   game: string;
@@ -11,6 +12,8 @@ export interface CaptureResult {
   player1Score?: number;
   player2Score?: number;
   winner?: string;
+  ocrResults?: string;
+  captureImage?: string;
 }
 
 interface Game {
@@ -188,6 +191,48 @@ interface SessionPlayer {
               </select>
             </div>
           }
+
+          <!-- Image Capture for OCR -->
+          <div>
+            <label class="block text-sm text-slate-300 mb-2">📸 Capture Image (Optional - for OCR)</label>
+            <label class="block">
+              <div class="border-2 border-dashed border-cyan-400/50 rounded-lg p-4 text-center cursor-pointer hover:border-cyan-400 transition-colors">
+                @if (capturedImage()) {
+                  <div>
+                    <p class="text-white font-semibold mb-2">✓ Image captured</p>
+                    <img [src]="capturedImage()" alt="Captured" class="max-h-32 mx-auto rounded mb-2" />
+                  </div>
+                } @else {
+                  <p class="text-white font-semibold">Click to upload or take photo</p>
+                  <p class="text-slate-400 text-xs">PNG, JPG (max 5MB)</p>
+                }
+              </div>
+              <input
+                #imageInput
+                type="file"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                [disabled]="isProcessingOCR()"
+                class="hidden"
+              />
+            </label>
+          </div>
+
+          <!-- OCR Results -->
+          @if (ocrResults()) {
+            <div class="bg-blue-600/20 rounded-lg p-3 border border-blue-400/30">
+              <p class="text-blue-300 font-semibold text-sm mb-2">📄 OCR Results</p>
+              <div class="bg-slate-900/50 rounded p-2 max-h-24 overflow-y-auto">
+                <p class="text-slate-200 text-xs whitespace-pre-wrap font-mono">{{ ocrResults() }}</p>
+              </div>
+            </div>
+          }
+
+          @if (isProcessingOCR()) {
+            <div class="text-center">
+              <p class="text-cyan-400 text-sm">🔄 Processing image with OCR...</p>
+            </div>
+          }
         </div>
 
         <!-- Action Buttons -->
@@ -201,11 +246,17 @@ interface SessionPlayer {
           </button>
           <button
             (click)="onSave()"
+            [disabled]="isSaving() || isProcessingOCR()"
             type="button"
-            class="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+            class="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-700 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
           >
-            <span>⭐</span>
-            <span>Save Result</span>
+            @if (isSaving()) {
+              <span class="animate-spin">⟳</span>
+              <span>Saving...</span>
+            } @else {
+              <span>⭐</span>
+              <span>Save Result</span>
+            }
           </button>
         </div>
       </div>
@@ -238,6 +289,12 @@ export class CaptureResultsDialogComponent {
   }
 
   gameType = signal<'solo' | 'vs'>('solo');
+  capturedImage = signal<string>('');
+  ocrResults = signal<string>('');
+  isProcessingOCR = signal(false);
+  isSaving = signal(false);
+
+  @ViewChild('imageInput') imageInput!: ElementRef<HTMLInputElement>;
 
   formData = {
     game: '',
@@ -268,58 +325,146 @@ export class CaptureResultsDialogComponent {
     }
   }
 
-  onSave(): void {
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const imageData = e.target?.result as string;
+        this.capturedImage.set(imageData);
+        await this.processOCR(imageData);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  private async processOCR(imageData: string): Promise<void> {
+    this.isProcessingOCR.set(true);
+    try {
+      const { data: { text } } = await Tesseract.recognize(imageData, 'eng');
+      this.ocrResults.set(text);
+    } catch (error) {
+      console.error('OCR error:', error);
+      this.ocrResults.set('OCR processing failed');
+    } finally {
+      this.isProcessingOCR.set(false);
+    }
+  }
+
+  private async compressImage(imageData: string, quality: number = 0.6): Promise<string> {
+    return new Promise<string>((resolve) => {
+      try {
+        const img = new Image();
+        img.src = imageData;
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(imageData);
+            return;
+          }
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          try {
+            const compressed = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressed);
+          } catch {
+            resolve(imageData);
+          }
+        };
+        img.onerror = () => resolve(imageData);
+      } catch {
+        resolve(imageData);
+      }
+    });
+  }
+
+  async onSave(): Promise<void> {
+    // Prevent double-submission
+    if (this.isSaving()) {
+      return;
+    }
+
     // Validate required fields
     if (!this.formData.game) {
       alert('Please select a game');
       return;
     }
 
-    if (this.gameType() === 'solo') {
-      if (!this.formData.result) {
-        alert('Please select a result (Win/Loss/Draw)');
-        return;
+    this.isSaving.set(true);
+
+    try {
+      let compressedImage = '';
+      if (this.capturedImage()) {
+        compressedImage = await this.compressImage(this.capturedImage(), 0.6);
       }
 
-      const result: CaptureResult = {
-        game: this.formData.game,
-        score: this.formData.score || 0,
-        result: this.formData.result,
-        gameType: 'solo',
-      };
+      if (this.gameType() === 'solo') {
+        if (!this.formData.result) {
+          alert('Please select a result (Win/Loss/Draw)');
+          this.isSaving.set(false);
+          return;
+        }
 
-      this.save.emit(result);
-    } else {
-      // VS mode validation
-      if (!this.formData.opponentUserId) {
-        alert('Please select an opponent player');
-        return;
-      }
-      if (this.formData.player1Score === undefined || this.formData.player1Score === null) {
-        alert('Please enter your score');
-        return;
-      }
-      if (this.formData.player2Score === undefined || this.formData.player2Score === null) {
-        alert('Please enter opponent score');
-        return;
-      }
-      if (!this.formData.winner) {
-        alert('Please select a result (winner)');
-        return;
+        const result: CaptureResult = {
+          game: this.formData.game,
+          score: this.formData.score || 0,
+          result: this.formData.result,
+          gameType: 'solo',
+          ocrResults: this.ocrResults(),
+          captureImage: compressedImage,
+        };
+
+        this.save.emit(result);
+      } else {
+        // VS mode validation
+        if (!this.formData.opponentUserId) {
+          alert('Please select an opponent player');
+          this.isSaving.set(false);
+          return;
+        }
+        if (this.formData.player1Score === undefined || this.formData.player1Score === null) {
+          alert('Please enter your score');
+          this.isSaving.set(false);
+          return;
+        }
+        if (this.formData.player2Score === undefined || this.formData.player2Score === null) {
+          alert('Please enter opponent score');
+          this.isSaving.set(false);
+          return;
+        }
+        if (!this.formData.winner) {
+          alert('Please select a result (winner)');
+          this.isSaving.set(false);
+          return;
+        }
+
+        const result: CaptureResult = {
+          game: this.formData.game,
+          score: this.formData.player1Score,
+          result: this.formData.winner,
+          gameType: 'vs',
+          opponentUserId: this.formData.opponentUserId,
+          player1Score: this.formData.player1Score,
+          player2Score: this.formData.player2Score,
+          winner: this.formData.winner,
+          ocrResults: this.ocrResults(),
+          captureImage: compressedImage,
+        };
+
+        this.save.emit(result);
       }
 
-      const result: CaptureResult = {
-        game: this.formData.game,
-        score: this.formData.player1Score,
-        result: this.formData.winner,
-        gameType: 'vs',
-        opponentUserId: this.formData.opponentUserId,
-        player1Score: this.formData.player1Score,
-        player2Score: this.formData.player2Score,
-        winner: this.formData.winner,
-      };
-
-      this.save.emit(result);
+      this.isSaving.set(false);
+    } catch (error) {
+      console.error('Error saving:', error);
+      this.isSaving.set(false);
     }
   }
 

@@ -600,18 +600,43 @@ export class LiveSessionsComponent implements OnInit {
   }
 
   onCaptureResultsSave(result: CaptureResult): void {
-    // Results are now captured by the gamer app using OCR dialog
-    // Cashier app only verifies results, doesn't create them
-    // This prevents duplicate entries in the database
+    const sessionId = this.currentSessionId();
+    if (!sessionId) return;
 
-    console.log('Result capture delegated to gamer app OCR dialog');
-    this.showCaptureDialog.set(false);
-    this.currentSessionId.set(null);
-    this.currentSessionPlayer.set(undefined);
+    console.log('Saving results for session:', sessionId);
+    console.log('Result data:', result);
 
-    alert('📸 Game results are captured in the Gamer App using OCR.\n\n✅ Please ask the gamer to capture the result with their device using the OCR capture dialog, then you can verify it in Results History.');
-
-    this.loadActiveSessions();
+    // Save to the unified game-results endpoint with OCR and image data
+    // This creates ONE entry with all data combined (game, score, result, ocrResults, captureImage)
+    this.http
+      .post(`${this.apiUrl}/api/game-results`, {
+        sessionId: sessionId,
+        game: result.game,
+        score: result.score || 0,
+        result: result.result,
+        gameType: result.gameType,
+        opponentUserId: result.opponentUserId,
+        player1Score: result.player1Score,
+        player2Score: result.player2Score,
+        winner: result.winner,
+        ocrResults: result.ocrResults,
+        captureImage: result.captureImage,
+      })
+      .subscribe({
+        next: (response) => {
+          console.log('Game result saved successfully:', response);
+          this.showCaptureDialog.set(false);
+          this.currentSessionId.set(null);
+          this.currentSessionPlayer.set(undefined);
+          this.loadActiveSessions();
+          alert('✅ Game result captured successfully with OCR and image!\n\nNavigate to Results History to verify.');
+        },
+        error: (err) => {
+          console.error('Failed to capture results:', err);
+          const errorMsg = err.error?.error || 'Unknown error';
+          alert(`❌ Failed to capture results: ${errorMsg}`);
+        },
+      });
   }
 
   extendSession(sessionId: string): void {
